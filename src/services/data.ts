@@ -52,7 +52,7 @@ class DataService {
 
     // Fall back to loading from data.json
     try {
-      const response = await fetch('/data.json');
+      const response = await fetch('./data.json');
       this.data = await response.json();
       return this.data!;
     } catch (error) {
