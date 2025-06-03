@@ -16,7 +16,7 @@ export class Notes extends LitElement {
     }
 
     .header {
-      padding: var(--fv-spacing-md);
+      padding: var(--fv-spacing-sm);
       border-bottom: 1px solid var(--fv-border-light);
       display: flex;
       align-items: center;
@@ -54,8 +54,8 @@ export class Notes extends LitElement {
     }
 
     .content {
-      padding: var(--fv-spacing-md);
-      height: calc(100% - 60px);
+      padding: var(--fv-spacing-sm);
+      height: calc(100% - 50px);
       overflow-y: auto;
       background-color: var(--note-bg);
       position: relative;

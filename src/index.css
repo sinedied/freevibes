@@ -58,7 +58,7 @@
   
   /* Layout */
   --fv-header-height: 60px;
-  --fv-widget-min-height: 200px;
+  --fv-widget-min-height: 150px;
   --fv-widget-gap: var(--fv-spacing-md);
 }
 

@@ -18,7 +18,7 @@ export class RSS extends LitElement {
     }
 
     .header {
-      padding: var(--fv-spacing-md);
+      padding: var(--fv-spacing-sm);
       border-bottom: 1px solid var(--fv-border-light);
       display: flex;
       align-items: center;
@@ -56,8 +56,8 @@ export class RSS extends LitElement {
     }
 
     .content {
-      padding: var(--fv-spacing-md);
-      height: calc(100% - 60px);
+      padding: var(--fv-spacing-sm);
+      height: calc(100% - 50px);
       overflow-y: auto;
     }
 
@@ -87,7 +87,7 @@ export class RSS extends LitElement {
 
     .item {
       border-bottom: 1px solid var(--fv-border-light);
-      padding: var(--fv-spacing-sm) 0;
+      padding: var(--fv-spacing-xs) 0;
     }
 
     .item:last-child {
@@ -95,10 +95,13 @@ export class RSS extends LitElement {
     }
 
     .item-link {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       text-decoration: none;
       color: var(--fv-text-primary);
       transition: var(--fv-transition);
+      gap: var(--fv-spacing-sm);
     }
 
     .item-link:hover {
@@ -108,14 +111,19 @@ export class RSS extends LitElement {
     .item-title {
       font-size: var(--fv-font-size-sm);
       font-weight: 500;
-      line-height: 1.4;
-      margin: 0 0 var(--fv-spacing-xs) 0;
+      line-height: 1.2;
+      margin: 0;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .item-date {
       font-size: var(--fv-font-size-xs);
       color: var(--fv-text-muted);
       margin: 0;
+      flex-shrink: 0;
     }
 
     .show-more {
@@ -199,7 +207,7 @@ export class RSS extends LitElement {
   }
 
   render() {
-    const displayItems = this.showAll ? this.items : this.items.slice(0, 10);
+    const displayItems = this.showAll ? this.items : this.items.slice(0, 7);
 
     return html`
       <div class="header">
@@ -228,19 +236,19 @@ export class RSS extends LitElement {
                   target="_blank" 
                   rel="noopener noreferrer"
                   class="item-link">
-                  <h3 class="item-title">${item.title}</h3>
-                  <p class="item-date">${this.formatDate(item.pubDate)}</p>
+                  <span class="item-title">${item.title}</span>
+                  <span class="item-date">${this.formatDate(item.pubDate)}</span>
                 </a>
               </li>
             `)}
           </ul>
-          ${this.items.length > 10 && !this.showAll ? html`
+          ${this.items.length > 7 && !this.showAll ? html`
             <div class="show-more">
               <button class="show-more-btn" @click=${this.toggleShowAll}>
-                Show More (${this.items.length - 10} more)
+                Show More (${this.items.length - 7} more)
               </button>
             </div>
-          ` : this.showAll && this.items.length > 10 ? html`
+          ` : this.showAll && this.items.length > 7 ? html`
             <div class="show-more">
               <button class="show-more-btn" @click=${this.toggleShowAll}>
                 Show Less
