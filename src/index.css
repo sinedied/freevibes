@@ -1,38 +1,138 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Color scheme */
+  --fv-bg-primary: #f8f9fa;
+  --fv-bg-secondary: #ffffff;
+  --fv-bg-tertiary: #e9ecef;
+  --fv-text-primary: #212529;
+  --fv-text-secondary: #6c757d;
+  --fv-text-muted: #adb5bd;
+  --fv-border: #dee2e6;
+  --fv-border-light: #f1f3f4;
+  --fv-shadow: rgba(0, 0, 0, 0.1);
+  --fv-shadow-hover: rgba(0, 0, 0, 0.15);
+  
+  /* Accent colors */
+  --fv-accent-primary: #007bff;
+  --fv-accent-hover: #0056b3;
+  --fv-success: #28a745;
+  --fv-warning: #ffc107;
+  --fv-danger: #dc3545;
+  
+  /* Note colors */
+  --fv-note-yellow: #fff3cd;
+  --fv-note-yellow-border: #ffeaa7;
+  --fv-note-green: #d4edda;
+  --fv-note-green-border: #a3e4d7;
+  --fv-note-blue: #d1ecf1;
+  --fv-note-blue-border: #7dd3fc;
+  --fv-note-red: #f8d7da;
+  --fv-note-red-border: #f1948a;
+  
+  /* Spacing */
+  --fv-spacing-xs: 0.25rem;
+  --fv-spacing-sm: 0.5rem;
+  --fv-spacing-md: 1rem;
+  --fv-spacing-lg: 1.5rem;
+  --fv-spacing-xl: 2rem;
+  --fv-spacing-xxl: 3rem;
+  
+  /* Typography */
+  --fv-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --fv-font-size-xs: 0.75rem;
+  --fv-font-size-sm: 0.875rem;
+  --fv-font-size-base: 1rem;
+  --fv-font-size-lg: 1.125rem;
+  --fv-font-size-xl: 1.25rem;
+  --fv-font-size-xxl: 1.5rem;
+  --fv-line-height: 1.5;
+  
+  /* Border radius */
+  --fv-border-radius-sm: 0.25rem;
+  --fv-border-radius: 0.5rem;
+  --fv-border-radius-lg: 0.75rem;
+  --fv-border-radius-xl: 1rem;
+  
+  /* Transitions */
+  --fv-transition: all 0.2s ease;
+  --fv-transition-fast: all 0.15s ease;
+  
+  /* Layout */
+  --fv-header-height: 60px;
+  --fv-widget-min-height: 200px;
+  --fv-widget-gap: var(--fv-spacing-md);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* Dark mode */
+[data-theme="dark"] {
+  --fv-bg-primary: #1a1a1a;
+  --fv-bg-secondary: #2d2d2d;
+  --fv-bg-tertiary: #404040;
+  --fv-text-primary: #ffffff;
+  --fv-text-secondary: #b3b3b3;
+  --fv-text-muted: #808080;
+  --fv-border: #404040;
+  --fv-border-light: #333333;
+  --fv-shadow: rgba(0, 0, 0, 0.3);
+  --fv-shadow-hover: rgba(0, 0, 0, 0.4);
+  
+  --fv-note-yellow: #3d3d00;
+  --fv-note-yellow-border: #666600;
+  --fv-note-green: #003d1a;
+  --fv-note-green-border: #006600;
+  --fv-note-blue: #001a3d;
+  --fv-note-blue-border: #0066cc;
+  --fv-note-red: #3d0000;
+  --fv-note-red-border: #660000;
 }
-a:hover {
-  color: #535bf2;
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--fv-font-family);
+  line-height: var(--fv-line-height);
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  background-color: var(--fv-bg-primary);
+  color: var(--fv-text-primary);
+  font-size: var(--fv-font-size-base);
+  transition: var(--fv-transition);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fv-bg-tertiary);
+  border-radius: var(--fv-border-radius);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fv-text-muted);
+  border-radius: var(--fv-border-radius);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fv-text-secondary);
+}
+
+/* Utility classes */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

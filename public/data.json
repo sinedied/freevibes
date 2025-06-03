@@ -1,0 +1,53 @@
+{
+  "settings": {
+    "columns": 3,
+    "darkMode": false
+  },
+  "widgets": [
+    {
+      "id": "rss-1",
+      "type": "rss",
+      "title": "Hacker News",
+      "feedUrl": "https://hnrss.org/frontpage",
+      "position": { "row": 1, "col": 1 }
+    },
+    {
+      "id": "rss-2",
+      "type": "rss",
+      "title": "GitHub Blog",
+      "feedUrl": "https://github.blog/feed/",
+      "position": { "row": 1, "col": 2 }
+    },
+    {
+      "id": "note-1",
+      "type": "note",
+      "title": "Welcome to FreeVibes!",
+      "content": "Welcome to FreeVibes - your personal dashboard!\n\n✨ Features:\n• RSS feed reader widgets\n• Inline sticky notes\n• Dark mode toggle\n• Responsive grid layout\n\n🔗 Click to edit this note!\nAdd links like https://github.com and they'll be clickable.",
+      "color": "yellow",
+      "position": { "row": 1, "col": 3 }
+    },
+    {
+      "id": "rss-3",
+      "type": "rss",
+      "title": "CSS-Tricks",
+      "feedUrl": "https://css-tricks.com/feed/",
+      "position": { "row": 2, "col": 1 }
+    },
+    {
+      "id": "note-2",
+      "type": "note",
+      "title": "Quick Notes",
+      "content": "• Remember to check email\n• Update project documentation\n• Review pull requests\n• Plan weekend activities\n\nUseful links:\nhttps://github.com/trending\nhttps://news.ycombinator.com",
+      "color": "green",
+      "position": { "row": 2, "col": 2 }
+    },
+    {
+      "id": "note-3",
+      "type": "note",
+      "title": "Ideas & Inspiration",
+      "content": "💡 Project Ideas:\n• Build a personal blog\n• Create a portfolio website\n• Learn a new programming language\n• Contribute to open source\n\n🎯 Goals for this month:\n• Complete current project\n• Write technical articles\n• Network with other developers",
+      "color": "blue",
+      "position": { "row": 2, "col": 3 }
+    }
+  ]
+}
