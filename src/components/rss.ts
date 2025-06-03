@@ -9,7 +9,7 @@ export class RSS extends LitElement {
   @state() private items: RSSItem[] = [];
   @state() private loading = false;
   @state() private error: string | null = null;
-  @state() private showAll = false;
+  @state() private displayCount = 7;
 
   static styles = css`
     :host {
@@ -57,8 +57,10 @@ export class RSS extends LitElement {
 
     .content {
       padding: var(--fv-spacing-sm);
-      height: calc(100% - 50px);
+      height: 200px;
       overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
     }
 
     .loading {
@@ -83,6 +85,7 @@ export class RSS extends LitElement {
       list-style: none;
       margin: 0;
       padding: 0;
+      min-height: 100%;
     }
 
     .item {
@@ -126,27 +129,6 @@ export class RSS extends LitElement {
       flex-shrink: 0;
     }
 
-    .show-more {
-      text-align: center;
-      margin-top: var(--fv-spacing-md);
-    }
-
-    .show-more-btn {
-      background: none;
-      border: 1px solid var(--fv-accent-primary);
-      border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-sm) var(--fv-spacing-md);
-      color: var(--fv-accent-primary);
-      cursor: pointer;
-      font-size: var(--fv-font-size-sm);
-      transition: var(--fv-transition);
-    }
-
-    .show-more-btn:hover {
-      background-color: var(--fv-accent-primary);
-      color: white;
-    }
-
     .empty {
       display: flex;
       align-items: center;
@@ -154,6 +136,13 @@ export class RSS extends LitElement {
       height: 100px;
       color: var(--fv-text-secondary);
       font-size: var(--fv-font-size-sm);
+    }
+
+    .load-indicator {
+      padding: var(--fv-spacing-sm);
+      text-align: center;
+      color: var(--fv-text-muted);
+      font-size: var(--fv-font-size-xs);
     }
   `;
 
@@ -165,6 +154,7 @@ export class RSS extends LitElement {
   private async loadFeed() {
     this.loading = true;
     this.error = null;
+    this.displayCount = 7; // Reset display count when reloading
     
     try {
       this.items = await rssService.fetchFeed(this.widget.feedUrl);
@@ -202,12 +192,34 @@ export class RSS extends LitElement {
     }
   }
 
-  private toggleShowAll() {
-    this.showAll = !this.showAll;
+  private handleScroll(event: Event) {
+    const element = event.target as HTMLElement;
+    const threshold = 50; // Load more when 50px from bottom
+    
+    console.log('Scroll event:', {
+      scrollTop: element.scrollTop,
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      threshold
+    });
+    
+    if (element.scrollTop + element.clientHeight >= element.scrollHeight - threshold) {
+      console.log('Loading more items...');
+      this.loadMoreItems();
+    }
+  }
+
+  private loadMoreItems() {
+    console.log('loadMoreItems called:', { displayCount: this.displayCount, totalItems: this.items.length });
+    if (this.displayCount < this.items.length) {
+      this.displayCount = Math.min(this.displayCount + 7, this.items.length);
+      console.log('New displayCount:', this.displayCount);
+    }
   }
 
   render() {
-    const displayItems = this.showAll ? this.items : this.items.slice(0, 7);
+    const displayItems = this.items.slice(0, this.displayCount);
+    const hasMoreItems = this.displayCount < this.items.length;
 
     return html`
       <div class="header">
@@ -220,7 +232,7 @@ export class RSS extends LitElement {
           ${this.loading ? '⟳' : '↻'}
         </button>
       </div>
-      <div class="content">
+      <div class="content" @scroll=${this.handleScroll}>
         ${this.loading ? html`
           <div class="loading">Loading...</div>
         ` : this.error ? html`
@@ -242,17 +254,9 @@ export class RSS extends LitElement {
               </li>
             `)}
           </ul>
-          ${this.items.length > 7 && !this.showAll ? html`
-            <div class="show-more">
-              <button class="show-more-btn" @click=${this.toggleShowAll}>
-                Show More (${this.items.length - 7} more)
-              </button>
-            </div>
-          ` : this.showAll && this.items.length > 7 ? html`
-            <div class="show-more">
-              <button class="show-more-btn" @click=${this.toggleShowAll}>
-                Show Less
-              </button>
+          ${hasMoreItems ? html`
+            <div class="load-indicator">
+              Scroll down for more items (${this.items.length - this.displayCount} remaining)
             </div>
           ` : ''}
         `}

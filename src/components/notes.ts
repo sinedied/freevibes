@@ -55,7 +55,7 @@ export class Notes extends LitElement {
 
     .content {
       padding: var(--fv-spacing-sm);
-      height: calc(100% - 50px);
+      height: 200px;
       overflow-y: auto;
       background-color: var(--note-bg);
       position: relative;
