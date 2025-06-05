@@ -31,10 +31,7 @@ export class Dashboard extends LitElement {
       min-height: var(--fv-widget-min-height);
     }
 
-    .widget:hover {
-      box-shadow: 0 4px 12px var(--fv-shadow-hover);
-      transform: translateY(-2px);
-    }
+    /* Suppression de l'effet hover (ombre et déplacement) */
 
     .empty-state {
       display: flex;
