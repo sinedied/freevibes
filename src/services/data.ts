@@ -34,11 +34,30 @@ export interface RSSItem {
   description?: string;
 }
 
+import { githubGistService } from './github-gist.js';
+
 class DataService {
   private data: DashboardData | null = null;
   private storageKey = 'freevibes-data';
+  private useGist = false;
+
+  async loginWithGithubToken(token: string) {
+    await githubGistService.login(token);
+    this.useGist = true;
+    this.data = await githubGistService.loadData();
+    this.saveLocal(this.data); // keep local backup
+  }
 
   async loadData(): Promise<DashboardData> {
+    if (this.useGist) {
+      try {
+        this.data = await githubGistService.loadData();
+        this.saveLocal(this.data);
+        return this.data!;
+      } catch (error) {
+        console.warn('Failed to load from gist, falling back to local/data.json', error);
+      }
+    }
     // Try to load from localStorage first
     const localData = localStorage.getItem(this.storageKey);
     if (localData) {
@@ -49,7 +68,6 @@ class DataService {
         console.warn('Failed to parse local data, falling back to default data');
       }
     }
-
     // Fall back to loading from data.json
     try {
       const response = await fetch('./data.json');
@@ -66,8 +84,19 @@ class DataService {
     }
   }
 
-  saveData(data: DashboardData): void {
+  async saveData(data: DashboardData): Promise<void> {
     this.data = data;
+    this.saveLocal(data);
+    if (this.useGist) {
+      try {
+        await githubGistService.saveData(data);
+      } catch (error) {
+        console.warn('Failed to save to gist, keeping local only', error);
+      }
+    }
+  }
+
+  private saveLocal(data: DashboardData) {
     localStorage.setItem(this.storageKey, JSON.stringify(data));
   }
 
@@ -75,21 +104,23 @@ class DataService {
     return this.data;
   }
 
-  updateWidget(updatedWidget: Widget): void {
+  async updateWidget(updatedWidget: Widget): Promise<void> {
     if (!this.data) return;
-    
     const index = this.data.widgets.findIndex(w => w.id === updatedWidget.id);
     if (index !== -1) {
       this.data.widgets[index] = updatedWidget;
-      this.saveData(this.data);
+      await this.saveData(this.data);
     }
   }
 
-  updateSettings(settings: Partial<DashboardData['settings']>): void {
+  async updateSettings(settings: Partial<DashboardData['settings']>): Promise<void> {
     if (!this.data) return;
-    
     this.data.settings = { ...this.data.settings, ...settings };
-    this.saveData(this.data);
+    await this.saveData(this.data);
+  }
+
+  isGistEnabled() {
+    return this.useGist;
   }
 }
 

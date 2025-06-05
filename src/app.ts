@@ -9,6 +9,9 @@ export class App extends LitElement {
   @state() private data: DashboardData | null = null;
   @state() private loading = true;
   @state() private showSettings = false;
+  @state() private githubLoggedIn = false;
+  @state() private loginError: string | null = null;
+  @state() private loginToken: string = '';
 
   static styles = css`
     :host {
@@ -113,6 +116,8 @@ export class App extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
+    // If already authenticated in this session, skip login
+    this.githubLoggedIn = false;
     await this.loadData();
     this.applyTheme();
   }
@@ -121,11 +126,30 @@ export class App extends LitElement {
     try {
       this.loading = true;
       this.data = await dataService.loadData();
+      this.githubLoggedIn = dataService.isGistEnabled();
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
       this.loading = false;
     }
+  }
+
+  private async handleGithubLogin(e: Event) {
+    e.preventDefault();
+    this.loginError = null;
+    try {
+      await dataService.loginWithGithubToken(this.loginToken.trim());
+      this.githubLoggedIn = true;
+      this.data = await dataService.loadData();
+      this.applyTheme();
+    } catch (err: any) {
+      this.loginError = 'Login failed: ' + (err?.message || 'Invalid token');
+      this.githubLoggedIn = false;
+    }
+  }
+
+  private handleTokenInput(e: Event) {
+    this.loginToken = (e.target as HTMLInputElement).value;
   }
 
   private toggleTheme() {
@@ -167,6 +191,28 @@ export class App extends LitElement {
           <a href="/" class="logo">FreeVibes</a>
         </div>
         <div class="loading">Loading dashboard...</div>
+      `;
+    }
+
+    if (!this.githubLoggedIn) {
+      return html`
+        <div class="header">
+          <a href="/" class="logo">FreeVibes</a>
+        </div>
+        <form style="max-width:400px;margin:3rem auto;padding:2rem;background:var(--fv-bg-secondary);border-radius:var(--fv-border-radius-lg);box-shadow:0 2px 8px var(--fv-shadow);display:flex;flex-direction:column;gap:1.5rem;" @submit=${this.handleGithubLogin}>
+          <h2 style="margin:0;color:var(--fv-accent-primary);font-size:1.5rem;">Sign in with GitHub</h2>
+          <label style="display:flex;flex-direction:column;gap:0.5rem;">
+            <span style="font-size:var(--fv-font-size-sm);color:var(--fv-text-secondary);">GitHub Personal Access Token (with gist scope):</span>
+            <input type="password" style="padding:0.5rem;font-size:1rem;border-radius:var(--fv-border-radius);border:1px solid var(--fv-border);" .value=${this.loginToken} @input=${this.handleTokenInput} required autocomplete="off" />
+          </label>
+          <button type="submit" style="background:var(--fv-accent-primary);color:white;padding:0.75rem 1.5rem;border:none;border-radius:var(--fv-border-radius);font-size:1rem;cursor:pointer;">Sign In</button>
+          ${this.loginError ? html`<div style="color:var(--fv-danger);font-size:var(--fv-font-size-sm);">${this.loginError}</div>` : ''}
+          <div style="color:var(--fv-text-muted);font-size:var(--fv-font-size-xs);line-height:1.4;">
+            <b>How to get a token?</b><br>
+            Go to <a href="https://github.com/settings/tokens/new?scopes=gist&description=FreeVibes%20Dashboard" target="_blank" rel="noopener" style="color:var(--fv-accent-primary);">GitHub token settings</a>,<br>
+            create a token with <b>gist</b> scope, and paste it above.
+          </div>
+        </form>
       `;
     }
 
