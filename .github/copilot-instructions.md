@@ -45,3 +45,4 @@ Description: A web dashboard for RSS/Notes inspired by the old NetVibes.
 - Ask questions if you are unsure about the implementation details, design choices, or need clarification on the requirements
 - Use descriptive variable and function names
 - Do not add comments unless absolutely necessary, the code should be self-explanatory
+- Always answer in the same language as the question, but use english for the generated content like code, comments or docs
