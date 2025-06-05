@@ -37,105 +37,103 @@ export interface RSSItem {
 import { githubGistService } from './github-gist.js';
 
 class DataService {
-  private data: DashboardData | undefined = undefined;
-  private storageKey = 'freevibes-data';
-  private useGist = false;
+  private dashboardData: DashboardData | undefined = undefined;
+  private localStorageKey = 'freevibes-data';
+  private isUsingGistStorage = false;
 
-  async loginWithGithubToken(token: string) {
-    await githubGistService.login(token);
-    this.useGist = true;
-    this.data = await githubGistService.loadData();
-    if (this.data) {
-      this.saveLocal(this.data); // keep local backup
+  async loginWithGithubToken(githubToken: string) {
+    await githubGistService.login(githubToken);
+    this.isUsingGistStorage = true;
+    this.dashboardData = await githubGistService.loadData();
+    if (this.dashboardData) {
+      this.saveToLocalStorage(this.dashboardData);
     }
   }
 
   logout() {
     githubGistService.logout();
-    this.useGist = false;
-    // Don't clear this.data - keep local data available
+    this.isUsingGistStorage = false;
   }
 
   async loadData(): Promise<DashboardData> {
-    if (this.useGist) {
+    if (this.isUsingGistStorage) {
       try {
-        this.data = await githubGistService.loadData();
-        if (this.data) {
-          this.saveLocal(this.data);
-          return this.data;
+        this.dashboardData = await githubGistService.loadData();
+        if (this.dashboardData) {
+          this.saveToLocalStorage(this.dashboardData);
+          return this.dashboardData;
         }
       } catch (error) {
         console.warn('Failed to load from gist, falling back to local/data.json', error);
       }
     }
-    // Try to load from localStorage first
-    const localData = localStorage.getItem(this.storageKey);
-    if (localData) {
+    
+    const localStorageData = localStorage.getItem(this.localStorageKey);
+    if (localStorageData) {
       try {
-        this.data = JSON.parse(localData);
-        if (this.data) {
-          return this.data;
+        this.dashboardData = JSON.parse(localStorageData);
+        if (this.dashboardData) {
+          return this.dashboardData;
         }
       } catch (error) {
         console.warn('Failed to parse local data, falling back to default data');
       }
     }
-    // Fall back to loading from data.json
+    
     try {
       const response = await fetch('./data.json');
-      this.data = await response.json();
-      if (this.data) {
-        return this.data;
+      this.dashboardData = await response.json();
+      if (this.dashboardData) {
+        return this.dashboardData;
       }
     } catch (error) {
       console.error('Failed to load data:', error);
     }
     
-    // Return default data if everything fails
-    this.data = {
+    this.dashboardData = {
       settings: { columns: 3, darkMode: false },
       widgets: []
     };
-    return this.data;
+    return this.dashboardData;
   }
 
-  async saveData(data: DashboardData): Promise<void> {
-    this.data = data;
-    this.saveLocal(data);
-    if (this.useGist) {
+  async saveData(dashboardData: DashboardData): Promise<void> {
+    this.dashboardData = dashboardData;
+    this.saveToLocalStorage(dashboardData);
+    if (this.isUsingGistStorage) {
       try {
-        await githubGistService.saveData(data);
+        await githubGistService.saveData(dashboardData);
       } catch (error) {
         console.warn('Failed to save to gist, keeping local only', error);
       }
     }
   }
 
-  private saveLocal(data: DashboardData) {
-    localStorage.setItem(this.storageKey, JSON.stringify(data));
+  private saveToLocalStorage(dashboardData: DashboardData) {
+    localStorage.setItem(this.localStorageKey, JSON.stringify(dashboardData));
   }
 
   getData(): DashboardData | undefined {
-    return this.data;
+    return this.dashboardData;
   }
 
   async updateWidget(updatedWidget: Widget): Promise<void> {
-    if (!this.data) return;
-    const index = this.data.widgets.findIndex(w => w.id === updatedWidget.id);
-    if (index !== -1) {
-      this.data.widgets[index] = updatedWidget;
-      await this.saveData(this.data);
+    if (!this.dashboardData) return;
+    const widgetIndex = this.dashboardData.widgets.findIndex(widget => widget.id === updatedWidget.id);
+    if (widgetIndex !== -1) {
+      this.dashboardData.widgets[widgetIndex] = updatedWidget;
+      await this.saveData(this.dashboardData);
     }
   }
 
-  async updateSettings(settings: Partial<DashboardData['settings']>): Promise<void> {
-    if (!this.data) return;
-    this.data.settings = { ...this.data.settings, ...settings };
-    await this.saveData(this.data);
+  async updateSettings(settingsUpdate: Partial<DashboardData['settings']>): Promise<void> {
+    if (!this.dashboardData) return;
+    this.dashboardData.settings = { ...this.dashboardData.settings, ...settingsUpdate };
+    await this.saveData(this.dashboardData);
   }
 
   isGistEnabled() {
-    return this.useGist;
+    return this.isUsingGistStorage;
   }
 }
 

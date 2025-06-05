@@ -210,28 +210,32 @@ export class RSS extends LitElement {
 
   private formatDate(dateString: string): string {
     try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = now.getTime() - date.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const publicationDate = new Date(dateString);
+      const currentTime = new Date();
+      const timeDifferenceMs = currentTime.getTime() - publicationDate.getTime();
+      const daysDifference = Math.floor(timeDifferenceMs / (1000 * 60 * 60 * 24));
       
-      if (diffDays === 0) {
-        const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-        if (diffHours === 0) {
-          const diffMinutes = Math.floor(diffTime / (1000 * 60));
-          return diffMinutes <= 1 ? 'Just now' : `${diffMinutes}m ago`;
-        }
-        return `${diffHours}h ago`;
-      } else if (diffDays === 1) {
+      if (daysDifference === 0) {
+        return this.formatSameDayTime(timeDifferenceMs);
+      } else if (daysDifference === 1) {
         return 'Yesterday';
-      } else if (diffDays < 7) {
-        return `${diffDays}d ago`;
+      } else if (daysDifference < 7) {
+        return `${daysDifference}d ago`;
       } else {
-        return date.toLocaleDateString();
+        return publicationDate.toLocaleDateString();
       }
     } catch (error) {
       return dateString;
     }
+  }
+
+  private formatSameDayTime(timeDifferenceMs: number): string {
+    const hoursDifference = Math.floor(timeDifferenceMs / (1000 * 60 * 60));
+    if (hoursDifference === 0) {
+      const minutesDifference = Math.floor(timeDifferenceMs / (1000 * 60));
+      return minutesDifference <= 1 ? 'Just now' : `${minutesDifference}m ago`;
+    }
+    return `${hoursDifference}h ago`;
   }
 
   private handleScroll(event: Event) {

@@ -194,17 +194,16 @@ export class App extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    // Check if PAT is present in localStorage and set githubLoggedIn accordingly
-    const pat = localStorage.getItem('freevibes-github-pat');
-    this.githubLoggedIn = !!pat;
-    if (this.githubLoggedIn && pat) {
-      await dataService.loginWithGithubToken(pat);
+    const githubToken = localStorage.getItem('freevibes-github-pat');
+    this.githubLoggedIn = !!githubToken;
+    if (this.githubLoggedIn && githubToken) {
+      await dataService.loginWithGithubToken(githubToken);
     }
-    await this.loadData();
+    await this.loadDashboardData();
     this.applyTheme();
   }
 
-  private async loadData() {
+  private async loadDashboardData() {
     try {
       this.loading = true;
       this.data = await dataService.loadData();
@@ -216,46 +215,46 @@ export class App extends LitElement {
     }
   }
 
-  private async handleGithubLogin(e: Event) {
-    e.preventDefault();
+  private async handleGithubLogin(loginEvent: Event) {
+    loginEvent.preventDefault();
     this.loginError = undefined;
     try {
-      const token = this.loginToken.trim();
-      await dataService.loginWithGithubToken(token);
-      localStorage.setItem('freevibes-github-pat', token);
+      const githubToken = this.loginToken.trim();
+      await dataService.loginWithGithubToken(githubToken);
+      localStorage.setItem('freevibes-github-pat', githubToken);
       this.githubLoggedIn = true;
       this.data = await dataService.loadData();
       this.applyTheme();
-    } catch (err: any) {
-      this.loginError = 'Login failed: ' + (err?.message || 'Invalid token');
+    } catch (error: any) {
+      this.loginError = 'Login failed: ' + (error?.message || 'Invalid token');
       this.githubLoggedIn = false;
     }
   }
 
-  private handleTokenInput(e: Event) {
-    this.loginToken = (e.target as HTMLInputElement).value;
+  private handleTokenInput(inputEvent: Event) {
+    this.loginToken = (inputEvent.target as HTMLInputElement).value;
   }
 
   private toggleTheme() {
     if (!this.data) return;
     
-    const newDarkMode = !this.data.settings.darkMode;
-    dataService.updateSettings({ darkMode: newDarkMode });
-    this.data = { ...this.data, settings: { ...this.data.settings, darkMode: newDarkMode } };
+    const newDarkModeState = !this.data.settings.darkMode;
+    dataService.updateSettings({ darkMode: newDarkModeState });
+    this.data = { ...this.data, settings: { ...this.data.settings, darkMode: newDarkModeState } };
     this.applyTheme();
   }
 
   private applyTheme() {
-    const isDark = this.data?.settings.darkMode ?? false;
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    const isDarkMode = this.data?.settings.darkMode ?? false;
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
   }
 
-  private handleDataUpdate(event: CustomEvent) {
-    this.data = event.detail;
+  private handleDataUpdate(updateEvent: CustomEvent) {
+    this.data = updateEvent.detail;
   }
 
-  private handleSettingsUpdate(event: CustomEvent) {
-    this.data = event.detail;
+  private handleSettingsUpdate(updateEvent: CustomEvent) {
+    this.data = updateEvent.detail;
     this.applyTheme();
     this.showSettings = false;
   }
@@ -313,7 +312,7 @@ export class App extends LitElement {
         </div>
         <div class="error">
           <div>Failed to load dashboard data</div>
-          <button class="retry-btn" @click=${this.loadData}>Retry</button>
+          <button class="retry-btn" @click=${this.loadDashboardData}>Retry</button>
         </div>
       `;
     }

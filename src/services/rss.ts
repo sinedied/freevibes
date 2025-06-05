@@ -1,40 +1,63 @@
 
-
 import type { RSSFeedResult } from './rss-xml.js';
 import { fetchAndParseFeed } from './rss-xml.js';
 
-class RSSService {
-  private cache = new Map<string, { result: RSSFeedResult; timestamp: number }>();
-  private cacheExpiry = 10 * 60 * 1000; // 10 minutes
+interface CachedFeedData {
+  feedResult: RSSFeedResult;
+  cacheTimestamp: number;
+}
 
-  async fetchFeed(url: string): Promise<RSSFeedResult> {
-    const cached = this.cache.get(url);
-    if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
-      return cached.result;
+class RSSService {
+  private feedCache = new Map<string, CachedFeedData>();
+  private cacheExpiryMs = 10 * 60 * 1000;
+
+  async fetchFeed(feedUrl: string): Promise<RSSFeedResult> {
+    const cachedFeedData = this.feedCache.get(feedUrl);
+    if (this.isCacheValid(cachedFeedData)) {
+      return cachedFeedData.feedResult;
     }
+
     try {
-      const result = await fetchAndParseFeed(url);
-      // Try to get favicon from domain
-      let favicon: string | undefined = undefined;
-      try {
-        const baseUrl = new URL(url);
-        favicon = `${baseUrl.origin}/favicon.ico`;
-      } catch {}
-      result.feed.favicon = favicon;
-      this.cache.set(url, { result, timestamp: Date.now() });
-      return result;
+      const feedResult = await fetchAndParseFeed(feedUrl);
+      this.addFaviconToFeed(feedResult, feedUrl);
+      this.cacheResult(feedUrl, feedResult);
+      return feedResult;
     } catch (error) {
       console.error('Failed to fetch RSS feed:', error);
-      const cached = this.cache.get(url);
-      if (cached) {
-        return cached.result;
-      }
-      return { items: [], feed: { title: '', favicon: undefined } };
+      return this.getFallbackResult(feedUrl);
     }
   }
 
+  private isCacheValid(cachedData: CachedFeedData | undefined): cachedData is CachedFeedData {
+    return cachedData !== undefined && (Date.now() - cachedData.cacheTimestamp < this.cacheExpiryMs);
+  }
+
+  private addFaviconToFeed(feedResult: RSSFeedResult, feedUrl: string): void {
+    try {
+      const feedDomain = new URL(feedUrl);
+      feedResult.feed.favicon = `${feedDomain.origin}/favicon.ico`;
+    } catch {
+      feedResult.feed.favicon = undefined;
+    }
+  }
+
+  private cacheResult(feedUrl: string, feedResult: RSSFeedResult): void {
+    this.feedCache.set(feedUrl, {
+      feedResult,
+      cacheTimestamp: Date.now()
+    });
+  }
+
+  private getFallbackResult(feedUrl: string): RSSFeedResult {
+    const cachedFeedData = this.feedCache.get(feedUrl);
+    if (cachedFeedData) {
+      return cachedFeedData.feedResult;
+    }
+    return { items: [], feed: { title: '', favicon: undefined } };
+  }
+
   clearCache(): void {
-    this.cache.clear();
+    this.feedCache.clear();
   }
 }
 
