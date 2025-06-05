@@ -45,14 +45,18 @@ class DataService {
     await githubGistService.login(token);
     this.useGist = true;
     this.data = await githubGistService.loadData();
-    this.saveLocal(this.data); // keep local backup
+    if (this.data) {
+      this.saveLocal(this.data); // keep local backup
+    }
   }
 
   async loadData(): Promise<DashboardData> {
     if (this.useGist) {
       try {
         this.data = await githubGistService.loadData();
-        this.saveLocal(this.data);
+        if (this.data) {
+          this.saveLocal(this.data);
+        }
         return this.data!;
       } catch (error) {
         console.warn('Failed to load from gist, falling back to local/data.json', error);

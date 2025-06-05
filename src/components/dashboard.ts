@@ -86,7 +86,7 @@ export class Dashboard extends LitElement {
   }
 
 
-  private renderWidget(widget: Widget, index: number) {
+  private renderWidget(widget: Widget) {
     const isDragging = this._draggedId === widget.id;
     return html`
       <div
@@ -95,7 +95,7 @@ export class Dashboard extends LitElement {
         draggable="true"
         @dragstart=${(e: DragEvent) => this.handleDragStart(e, widget.id)}
         @dragend=${this.handleDragEnd}
-        @dragover=${(e: DragEvent) => this.handleDragOver(e, widget.id)}
+        @dragover=${(e: DragEvent) => this.handleDragOver(e)}
         @drop=${(e: DragEvent) => this.handleDrop(e, widget.id)}
         style=${isDragging ? 'opacity:0.5;' : ''}
       >
@@ -116,7 +116,7 @@ export class Dashboard extends LitElement {
     e.dataTransfer!.effectAllowed = 'move';
   }
 
-  private handleDragOver(e: DragEvent, id: string) {
+  private handleDragOver(e: DragEvent) {
     e.preventDefault();
     e.dataTransfer!.dropEffect = 'move';
   }
@@ -182,7 +182,7 @@ export class Dashboard extends LitElement {
 
     return html`
       <div class="dashboard">
-        ${sortedWidgets.map((widget, i) => this.renderWidget(widget, i))}
+        ${sortedWidgets.map((widget) => this.renderWidget(widget))}
       </div>
     `;
   }
