@@ -37,7 +37,7 @@ export interface RSSItem {
 import { githubGistService } from './github-gist.js';
 
 class DataService {
-  private data: DashboardData | null = null;
+  private data: DashboardData | undefined = undefined;
   private storageKey = 'freevibes-data';
   private useGist = false;
 
@@ -62,8 +62,8 @@ class DataService {
         this.data = await githubGistService.loadData();
         if (this.data) {
           this.saveLocal(this.data);
+          return this.data;
         }
-        return this.data!;
       } catch (error) {
         console.warn('Failed to load from gist, falling back to local/data.json', error);
       }
@@ -73,7 +73,9 @@ class DataService {
     if (localData) {
       try {
         this.data = JSON.parse(localData);
-        return this.data!;
+        if (this.data) {
+          return this.data;
+        }
       } catch (error) {
         console.warn('Failed to parse local data, falling back to default data');
       }
@@ -82,16 +84,19 @@ class DataService {
     try {
       const response = await fetch('./data.json');
       this.data = await response.json();
-      return this.data!;
+      if (this.data) {
+        return this.data;
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
-      // Return default data if everything fails
-      this.data = {
-        settings: { columns: 3, darkMode: false },
-        widgets: []
-      };
-      return this.data;
     }
+    
+    // Return default data if everything fails
+    this.data = {
+      settings: { columns: 3, darkMode: false },
+      widgets: []
+    };
+    return this.data;
   }
 
   async saveData(data: DashboardData): Promise<void> {
@@ -110,7 +115,7 @@ class DataService {
     localStorage.setItem(this.storageKey, JSON.stringify(data));
   }
 
-  getData(): DashboardData | null {
+  getData(): DashboardData | undefined {
     return this.data;
   }
 

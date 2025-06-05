@@ -31,8 +31,6 @@ export class Dashboard extends LitElement {
       min-height: var(--fv-widget-min-height);
     }
 
-    /* Suppression de l'effet hover (ombre et déplacement) */
-
     .empty-state {
       display: flex;
       align-items: center;
@@ -108,17 +106,21 @@ export class Dashboard extends LitElement {
     `;
   }
 
-  private _draggedId: string | null = null;
+  private _draggedId: string | undefined = undefined;
 
   private handleDragStart(e: DragEvent, id: string) {
     this._draggedId = id;
     e.dataTransfer?.setData('text/plain', id);
-    e.dataTransfer!.effectAllowed = 'move';
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+    }
   }
 
   private handleDragOver(e: DragEvent) {
     e.preventDefault();
-    e.dataTransfer!.dropEffect = 'move';
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
   }
 
   private handleDrop(e: DragEvent, targetId: string) {
@@ -126,30 +128,25 @@ export class Dashboard extends LitElement {
     const fromId = this._draggedId;
     if (!fromId || fromId === targetId) return;
 
-    // 1. Trie les widgets par position pour obtenir l'ordre visuel actuel
     const sorted = [...this.data.widgets].sort((a, b) => {
       if (a.position.row !== b.position.row) return a.position.row - b.position.row;
       return a.position.col - b.position.col;
     });
 
-    // 2. Trouve les index source et cible dans ce tableau trié
     const fromIndex = sorted.findIndex(w => w.id === fromId);
     const toIndex = sorted.findIndex(w => w.id === targetId);
     if (fromIndex === -1 || toIndex === -1) return;
 
-    // 3. Déplace le widget dans le tableau trié
     const [moved] = sorted.splice(fromIndex, 1);
     sorted.splice(toIndex, 0, moved);
 
-    // 4. Recalcule les positions (row) pour refléter le nouvel ordre
     const updatedWidgets = sorted.map((w, i) => ({
       ...w,
       position: { ...w.position, row: (i + 1) * 1000 }
     }));
 
-    // 5. Mets à jour le tableau d'origine dans le même ordre que sorted
     const updatedData = { ...this.data, widgets: updatedWidgets };
-    this._draggedId = null;
+    this._draggedId = undefined;
     this.dispatchEvent(new CustomEvent('data-updated', {
       detail: updatedData,
       bubbles: true
@@ -157,7 +154,7 @@ export class Dashboard extends LitElement {
   }
 
   private handleDragEnd = () => {
-    this._draggedId = null;
+    this._draggedId = undefined;
     this.requestUpdate();
   };
 
