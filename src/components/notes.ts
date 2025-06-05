@@ -82,14 +82,12 @@ export class Notes extends LitElement {
     }
 
     .note-text {
-      white-space: pre-wrap;
       word-wrap: break-word;
       line-height: var(--fv-line-height);
       margin: 0;
       cursor: pointer;
       font-size: var(--fv-font-size-sm);
       color: var(--fv-text-primary);
-      min-height: 100px;
     }
 
     .note-text:hover {
@@ -150,20 +148,6 @@ export class Notes extends LitElement {
 
     .cancel-btn:hover {
       background-color: var(--fv-text-secondary);
-    }
-
-    .edit-hint {
-      position: absolute;
-      bottom: var(--fv-spacing-sm);
-      left: var(--fv-spacing-sm);
-      font-size: var(--fv-font-size-xs);
-      color: var(--fv-text-muted);
-      opacity: 0;
-      transition: var(--fv-transition);
-    }
-
-    .content:hover .edit-hint {
-      opacity: 1;
     }
 
     .empty {
@@ -263,7 +247,6 @@ export class Notes extends LitElement {
           <div class="note-text" @click=${this.startEditing}>
             ${this.parseContent(this.widget.content)}
           </div>
-          <div class="edit-hint">Click to edit • Ctrl+Enter to save</div>
         `}
       </div>
     `;
