@@ -68,6 +68,11 @@ export class Dashboard extends LitElement {
         flex-basis: calc(50% - var(--fv-widget-gap) / 2);
         max-width: calc(50% - var(--fv-widget-gap) / 2);
       }
+      /* For odd number of columns > 2, make the last column full width */
+      .column:nth-child(odd):last-child {
+        flex-basis: 100%;
+        max-width: 100%;
+      }
     }
 
     .widget {
