@@ -24,7 +24,7 @@ export class Notes extends LitElement {
     }
 
     .title {
-      font-size: var(--fv-font-size-lg);
+      font-size: var(--fv-font-size-sm);
       font-weight: 600;
       color: var(--fv-text-primary);
       margin: 0;
