@@ -7,6 +7,8 @@ import { rssService } from '../services/rss.js';
 export class RSS extends LitElement {
   @property({ type: Object }) widget!: RSSWidget;
   @state() private items: RSSItem[] = [];
+  @state() private feedTitle: string = '';
+  @state() private favicon: string | undefined;
   @state() private loading = false;
   @state() private error: string | null = null;
   @state() private displayCount = 7;
@@ -154,12 +156,16 @@ export class RSS extends LitElement {
   private async loadFeed() {
     this.loading = true;
     this.error = null;
-    this.displayCount = 7; // Reset display count when reloading
-    
+    this.displayCount = 7;
     try {
-      this.items = await rssService.fetchFeed(this.widget.feedUrl);
+      const result = await rssService.fetchFeed(this.widget.feedUrl);
+      this.items = result.items;
+      this.feedTitle = result.feed.title || this.widget.title;
+      this.favicon = result.feed.favicon;
     } catch (error) {
       this.error = 'Failed to load RSS feed';
+      this.feedTitle = this.widget.title;
+      this.favicon = undefined;
       console.error('RSS feed error:', error);
     } finally {
       this.loading = false;
@@ -223,7 +229,18 @@ export class RSS extends LitElement {
 
     return html`
       <div class="header">
-        <h2 class="title">${this.widget.title}</h2>
+        <span style="display: flex; align-items: center; gap: var(--fv-spacing-sm);">
+          <img
+            src="${this.favicon || 'data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'10\' fill=\'%23ff9800\'/%3E%3Cpath d=\'M6 15a1 1 0 110-2 1 1 0 010 2zm2.5-1a1 1 0 110-2c3.59 0 6.5-2.91 6.5-6.5a1 1 0 112 0c0 4.694-3.806 8.5-8.5 8.5z\' fill=\'white\'/%3E%3C/svg%3E'}"
+            alt="Favicon"
+            style="width: 20px; height: 20px; border-radius: 4px; background: var(--fv-bg-secondary); object-fit: contain;"
+            @error=${(e: Event) => {
+              const img = e.currentTarget as HTMLImageElement;
+              img.src = 'data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'10\' fill=\'%23ff9800\'/%3E%3Cpath d=\'M6 15a1 1 0 110-2 1 1 0 010 2zm2.5-1a1 1 0 110-2c3.59 0 6.5-2.91 6.5-6.5a1 1 0 112 0c0 4.694-3.806 8.5-8.5 8.5z\' fill=\'white\'/%3E%3C/svg%3E';
+            }}
+          />
+          <h2 class="title" style="margin: 0;">${this.feedTitle}</h2>
+        </span>
         <button 
           class="refresh-btn" 
           @click=${this.loadFeed}
