@@ -23,13 +23,14 @@ class GithubGistService {
   async login(token: string) {
     this.token = token;
     localStorage.setItem(this.storageKey, token);
-    this.gistId = await this.findOrCreateGist();
+    // Only set gistId if found, do not create a new gist here
+    this.gistId = await this.findGistId();
+    // If not found, will be created on first save
   }
 
-  private async findOrCreateGist(): Promise<string> {
-    // Defensive: always check token
+  // Find gist by filename, do not create
+  private async findGistId(): Promise<string | null> {
     if (!this.token) throw new Error('No GitHub token');
-    // Get all gists for the user (may be paginated)
     let page = 1;
     let gist = null;
     while (true) {
@@ -38,8 +39,14 @@ class GithubGistService {
       if (gist || gists.length < 100) break;
       page++;
     }
-    if (gist) return gist.id;
-    // Create new gist if not found, with example data
+    return gist ? gist.id : null;
+  }
+
+  // Only create gist if needed (on save)
+  private async findOrCreateGist(): Promise<string> {
+    let gistId = await this.findGistId();
+    if (gistId) return gistId;
+    // Create new gist with example data
     const exampleData = {
       settings: { columns: 3, darkMode: false },
       widgets: [
@@ -78,14 +85,21 @@ class GithubGistService {
   }
 
   async loadData(): Promise<any> {
-    if (!this.gistId) throw new Error('Not logged in');
+    // Always try to find the gistId if not set
+    if (!this.gistId) {
+      this.gistId = await this.findGistId();
+    }
+    if (!this.gistId) throw new Error('No gist found for FreeVibes');
     const gist = await this.api(`/gists/${this.gistId}`);
     const file = gist.files[GIST_FILENAME];
     return JSON.parse(file.content);
   }
 
   async saveData(data: any): Promise<void> {
-    if (!this.gistId) throw new Error('Not logged in');
+    // If gist does not exist, create it first
+    if (!this.gistId) {
+      this.gistId = await this.findOrCreateGist();
+    }
     await this.api(`/gists/${this.gistId}`, 'PATCH', {
       files: {
         [GIST_FILENAME]: { content: JSON.stringify(data, null, 2) }
