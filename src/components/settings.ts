@@ -247,7 +247,7 @@ export class Settings extends LitElement {
                 type="range"
                 class="range-input"
                 min="1"
-                max="5"
+                max="15"
                 .value=${this.columns.toString()}
                 @input=${this.handleColumnsChange}
               />

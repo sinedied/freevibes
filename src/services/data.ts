@@ -11,9 +11,10 @@ export interface Widget {
   type: 'rss' | 'note';
   title: string;
   position: {
-    row: number;
-    col: number;
+    column: number;
+    order: number;
   };
+  height?: number; // Height in lines (em units)
 }
 
 export interface RSSWidget extends Widget {
@@ -41,6 +42,28 @@ class DataService {
   private localStorageKey = 'freevibes-data';
   private isUsingGistStorage = false;
 
+  private migrateWidgetData(widgets: any[]): Widget[] {
+    return widgets.map((widget, index) => {
+      // If widget has old position format (row, col), migrate to new format
+      if (widget.position && 'row' in widget.position && 'col' in widget.position) {
+        const { row, col } = widget.position;
+        return {
+          ...widget,
+          position: {
+            column: col,
+            order: row * 1000 + index // Convert row-based order to column order
+          },
+          height: widget.height || 6 // Default height of 6 lines
+        };
+      }
+      // Ensure height is set for new widgets
+      return {
+        ...widget,
+        height: widget.height || 6
+      };
+    });
+  }
+
   async loginWithGithubToken(githubToken: string) {
     await githubGistService.login(githubToken);
     this.isUsingGistStorage = true;
@@ -56,12 +79,19 @@ class DataService {
   }
 
   async loadData(): Promise<DashboardData> {
+    let rawData: any;
+
     if (this.isUsingGistStorage) {
       try {
-        this.dashboardData = await githubGistService.loadData();
-        if (this.dashboardData) {
-          this.saveToLocalStorage(this.dashboardData);
-          return this.dashboardData;
+        rawData = await githubGistService.loadData();
+        if (rawData) {
+          const migratedData = {
+            ...rawData,
+            widgets: this.migrateWidgetData(rawData.widgets)
+          };
+          this.dashboardData = migratedData;
+          this.saveToLocalStorage(migratedData);
+          return migratedData;
         }
       } catch (error) {
         console.warn('Failed to load from gist, falling back to local/data.json', error);
@@ -71,9 +101,14 @@ class DataService {
     const localStorageData = localStorage.getItem(this.localStorageKey);
     if (localStorageData) {
       try {
-        this.dashboardData = JSON.parse(localStorageData);
-        if (this.dashboardData) {
-          return this.dashboardData;
+        rawData = JSON.parse(localStorageData);
+        if (rawData) {
+          const migratedData = {
+            ...rawData,
+            widgets: this.migrateWidgetData(rawData.widgets)
+          };
+          this.dashboardData = migratedData;
+          return migratedData;
         }
       } catch (error) {
         console.warn('Failed to parse local data, falling back to default data');
@@ -82,19 +117,26 @@ class DataService {
     
     try {
       const response = await fetch('./data.json');
-      this.dashboardData = await response.json();
-      if (this.dashboardData) {
-        return this.dashboardData;
+      rawData = await response.json();
+      if (rawData) {
+        const migratedData = {
+          ...rawData,
+          widgets: this.migrateWidgetData(rawData.widgets)
+        };
+        this.dashboardData = migratedData;
+        return migratedData;
       }
     } catch (error) {
       console.error('Failed to load data:', error);
     }
     
-    this.dashboardData = {
+    // Fallback default data
+    const defaultData = {
       settings: { columns: 3, darkMode: false },
       widgets: []
     };
-    return this.dashboardData;
+    this.dashboardData = defaultData;
+    return defaultData;
   }
 
   async saveData(dashboardData: DashboardData): Promise<void> {
