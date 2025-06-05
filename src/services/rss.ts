@@ -37,9 +37,24 @@ class RSSService {
         pubDate: item.pubDate,
         description: item.description
       }));
+      let favicon = data.feed?.image || data.feed?.favicon || undefined;
+      // If favicon is relative, make it absolute using the feed link
+      if (favicon && !/^https?:\/\//.test(favicon)) {
+        try {
+          const baseUrl = new URL(url);
+          favicon = new URL(favicon, baseUrl.origin).href;
+        } catch {}
+      }
+      // If no favicon, fallback to domain favicon
+      if (!favicon) {
+        try {
+          const baseUrl = new URL(url);
+          favicon = `${baseUrl.origin}/favicon.ico`;
+        } catch {}
+      }
       const feed: RSSFeedInfo = {
         title: data.feed?.title || '',
-        favicon: data.feed?.image || data.feed?.favicon || undefined
+        favicon
       };
       const result: RSSFeedResult = { items, feed };
       this.cache.set(url, { result, timestamp: Date.now() });
