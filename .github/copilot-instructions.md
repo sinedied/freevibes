@@ -39,10 +39,13 @@ Description: A web dashboard for RSS/Notes inspired by the old NetVibes.
 - Flat design with a focus on simplicity and usability
 - Shadows can be used for depth, but should be subtle
 
-## Best practices
+## Coding standards
 - Keep the code simple and maintainable
 - Use plain typescript functions rather than classes where possible
-- Ask questions if you are unsure about the implementation details, design choices, or need clarification on the requirements
 - Use descriptive variable and function names
 - Do not add comments unless absolutely necessary, the code should be self-explanatory
+- Never use `null`, always use `undefined` for optional values
+
+## User interactions
+- Ask questions if you are unsure about the implementation details, design choices, or need clarification on the requirements
 - Always answer in the same language as the question, but use english for the generated content like code, comments or docs
