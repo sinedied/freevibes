@@ -10,22 +10,68 @@ const GITHUB_API = 'https://api.github.com';
 class GithubGistService {
   private token: string | null = null;
   private gistId: string | null = null;
+  private storageKey = 'freevibes-github-pat';
+
+  constructor() {
+    // Try to load token from localStorage
+    const stored = localStorage.getItem(this.storageKey);
+    if (stored) {
+      this.token = stored;
+    }
+  }
 
   async login(token: string) {
     this.token = token;
+    localStorage.setItem(this.storageKey, token);
     this.gistId = await this.findOrCreateGist();
   }
 
   private async findOrCreateGist(): Promise<string> {
-    const gists = await this.api('/gists');
-    let gist = gists.find((g: any) => g.files[GIST_FILENAME]);
+    // Defensive: always check token
+    if (!this.token) throw new Error('No GitHub token');
+    // Get all gists for the user (may be paginated)
+    let page = 1;
+    let gist = null;
+    while (true) {
+      const gists = await this.api(`/gists?per_page=100&page=${page}`);
+      gist = gists.find((g: any) => g.files && g.files[GIST_FILENAME]);
+      if (gist || gists.length < 100) break;
+      page++;
+    }
     if (gist) return gist.id;
-    // Create new gist if not found
+    // Create new gist if not found, with example data
+    const exampleData = {
+      settings: { columns: 3, darkMode: false },
+      widgets: [
+        {
+          id: 'rss-1',
+          type: 'rss',
+          title: 'Hacker News',
+          feedUrl: 'https://hnrss.org/frontpage',
+          position: { row: 1000, col: 1 }
+        },
+        {
+          id: 'rss-2',
+          type: 'rss',
+          title: 'Gameblog',
+          feedUrl: 'https://www.gameblog.fr/rssmap/rss_all.xml',
+          position: { row: 2000, col: 1 }
+        },
+        {
+          id: 'note-1',
+          type: 'note',
+          title: 'Welcome Note',
+          content: 'Welcome to FreeVibes!\n\n- You can edit this note.\n- Add your own RSS feeds and notes.\n- Click links to open them in a new tab.\n\nExample: https://github.com/',
+          color: 'yellow',
+          position: { row: 1000, col: 2 }
+        }
+      ]
+    };
     const res = await this.api('/gists', 'POST', {
       description: GIST_DESC,
       public: false,
       files: {
-        [GIST_FILENAME]: { content: '{}' }
+        [GIST_FILENAME]: { content: JSON.stringify(exampleData, null, 2) }
       }
     });
     return res.id;

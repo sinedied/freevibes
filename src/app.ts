@@ -116,8 +116,13 @@ export class App extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    // If already authenticated in this session, skip login
-    this.githubLoggedIn = false;
+    // Check if PAT is present in localStorage and set githubLoggedIn accordingly
+    const pat = localStorage.getItem('freevibes-github-pat');
+    this.githubLoggedIn = !!pat;
+    if (this.githubLoggedIn) {
+      // If token is present, ensure dataService uses gist
+      await dataService.loginWithGithubToken(pat!);
+    }
     await this.loadData();
     this.applyTheme();
   }
@@ -138,7 +143,9 @@ export class App extends LitElement {
     e.preventDefault();
     this.loginError = null;
     try {
-      await dataService.loginWithGithubToken(this.loginToken.trim());
+      const token = this.loginToken.trim();
+      await dataService.loginWithGithubToken(token);
+      localStorage.setItem('freevibes-github-pat', token);
       this.githubLoggedIn = true;
       this.data = await dataService.loadData();
       this.applyTheme();
