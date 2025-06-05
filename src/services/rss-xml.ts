@@ -1,5 +1,3 @@
-// Service to fetch and parse RSS/Atom XML feeds to JSON
-
 export interface RSSItem {
   title: string;
   link: string;

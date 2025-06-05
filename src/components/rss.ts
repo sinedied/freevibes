@@ -10,7 +10,7 @@ export class RSS extends LitElement {
   @state() private feedTitle: string = '';
   @state() private favicon: string | undefined;
   @state() private loading = false;
-  @state() private error: string | null = null;
+  @state() private error: string | undefined = undefined;
   @state() private displayCount = 7;
   private autoRefreshInterval: number | undefined;
 
@@ -147,6 +147,31 @@ export class RSS extends LitElement {
       color: var(--fv-text-muted);
       font-size: var(--fv-font-size-xs);
     }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-sm);
+      min-width: 0;
+      flex: 1;
+    }
+
+    .favicon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: var(--fv-bg-secondary);
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
   `;
 
   async connectedCallback() {
@@ -166,7 +191,7 @@ export class RSS extends LitElement {
 
   private async loadFeed() {
     this.loading = true;
-    this.error = null;
+    this.error = undefined;
     this.displayCount = 7;
     try {
       const result = await rssService.fetchFeed(this.widget.feedUrl);
@@ -185,52 +210,46 @@ export class RSS extends LitElement {
 
   private formatDate(dateString: string): string {
     try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = now.getTime() - date.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const publicationDate = new Date(dateString);
+      const currentTime = new Date();
+      const timeDifferenceMs = currentTime.getTime() - publicationDate.getTime();
+      const daysDifference = Math.floor(timeDifferenceMs / (1000 * 60 * 60 * 24));
       
-      if (diffDays === 0) {
-        const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-        if (diffHours === 0) {
-          const diffMinutes = Math.floor(diffTime / (1000 * 60));
-          return diffMinutes <= 1 ? 'Just now' : `${diffMinutes}m ago`;
-        }
-        return `${diffHours}h ago`;
-      } else if (diffDays === 1) {
+      if (daysDifference === 0) {
+        return this.formatSameDayTime(timeDifferenceMs);
+      } else if (daysDifference === 1) {
         return 'Yesterday';
-      } else if (diffDays < 7) {
-        return `${diffDays}d ago`;
+      } else if (daysDifference < 7) {
+        return `${daysDifference}d ago`;
       } else {
-        return date.toLocaleDateString();
+        return publicationDate.toLocaleDateString();
       }
     } catch (error) {
       return dateString;
     }
   }
 
+  private formatSameDayTime(timeDifferenceMs: number): string {
+    const hoursDifference = Math.floor(timeDifferenceMs / (1000 * 60 * 60));
+    if (hoursDifference === 0) {
+      const minutesDifference = Math.floor(timeDifferenceMs / (1000 * 60));
+      return minutesDifference <= 1 ? 'Just now' : `${minutesDifference}m ago`;
+    }
+    return `${hoursDifference}h ago`;
+  }
+
   private handleScroll(event: Event) {
     const element = event.target as HTMLElement;
-    const threshold = 50; // Load more when 50px from bottom
-    
-    console.log('Scroll event:', {
-      scrollTop: element.scrollTop,
-      clientHeight: element.clientHeight,
-      scrollHeight: element.scrollHeight,
-      threshold
-    });
+    const threshold = 50;
     
     if (element.scrollTop + element.clientHeight >= element.scrollHeight - threshold) {
-      console.log('Loading more items...');
       this.loadMoreItems();
     }
   }
 
   private loadMoreItems() {
-    console.log('loadMoreItems called:', { displayCount: this.displayCount, totalItems: this.items.length });
     if (this.displayCount < this.items.length) {
       this.displayCount = Math.min(this.displayCount + 7, this.items.length);
-      console.log('New displayCount:', this.displayCount);
     }
   }
 
@@ -240,17 +259,17 @@ export class RSS extends LitElement {
 
     return html`
       <div class="header">
-        <span style="display: flex; align-items: center; gap: var(--fv-spacing-sm); min-width: 0; flex: 1;">
+        <span class="header-content">
           <img
             src="${this.favicon || 'data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'10\' fill=\'%23ff9800\'/%3E%3Cpath d=\'M6 15a1 1 0 110-2 1 1 0 010 2zm2.5-1a1 1 0 110-2c3.59 0 6.5-2.91 6.5-6.5a1 1 0 112 0c0 4.694-3.806 8.5-8.5 8.5z\' fill=\'white\'/%3E%3C/svg%3E'}"
             alt="Favicon"
-            style="width: 20px; height: 20px; border-radius: 4px; background: var(--fv-bg-secondary); object-fit: contain; flex-shrink: 0;"
+            class="favicon"
             @error=${(e: Event) => {
               const img = e.currentTarget as HTMLImageElement;
               img.src = 'data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'10\' fill=\'%23ff9800\'/%3E%3Cpath d=\'M6 15a1 1 0 110-2 1 1 0 010 2zm2.5-1a1 1 0 110-2c3.59 0 6.5-2.91 6.5-6.5a1 1 0 112 0c0 4.694-3.806 8.5-8.5 8.5z\' fill=\'white\'/%3E%3C/svg%3E';
             }}
           />
-          <h2 class="title" style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;" title="${this.feedTitle}">${this.feedTitle}</h2>
+          <h2 class="title header-title" title="${this.feedTitle}">${this.feedTitle}</h2>
         </span>
       </div>
       <div class="content" @scroll=${this.handleScroll}>

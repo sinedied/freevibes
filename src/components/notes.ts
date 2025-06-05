@@ -202,21 +202,24 @@ export class Notes extends LitElement {
       return html`<span class="empty">Click to add a note...</span>`;
     }
 
-    // Simple link detection and replacement
-    const linkRegex = /(https?:\/\/[^\s]+)/g;
-    const lines = content.split('\n');
+    const contentLines = content.split('\n');
     
-    return html`${lines.map((line, index) => {
-      const parts = line.split(linkRegex);
-      const renderedLine = parts.map(part => {
-        if (linkRegex.test(part)) {
-          return html`<a href="${part}" target="_blank" rel="noopener noreferrer">${part}</a>`;
-        }
-        return part;
-      });
-      
-      return html`${renderedLine}${index < lines.length - 1 ? html`<br>` : ''}`;
+    return html`${contentLines.map((line, lineIndex) => {
+      const parsedLine = this.parseLinksInText(line);
+      return html`${parsedLine}${lineIndex < contentLines.length - 1 ? html`<br>` : ''}`;
     })}`;
+  }
+
+  private parseLinksInText(text: string) {
+    const linkRegex = /(https?:\/\/[^\s]+)/g;
+    const textParts = text.split(linkRegex);
+    
+    return textParts.map(part => {
+      if (linkRegex.test(part)) {
+        return html`<a href="${part}" target="_blank" rel="noopener noreferrer">${part}</a>`;
+      }
+      return part;
+    });
   }
 
   render() {
