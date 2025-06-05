@@ -45,7 +45,10 @@ Description: A web dashboard for RSS/Notes inspired by the old NetVibes.
 - Use descriptive variable and function names
 - Do not add comments unless absolutely necessary, the code should be self-explanatory
 - Never use `null`, always use `undefined` for optional values
+- Use conventional commit messages for all changes
 
 ## User interactions
 - Ask questions if you are unsure about the implementation details, design choices, or need clarification on the requirements
 - Always answer in the same language as the question, but use english for the generated content like code, comments or docs
+
+If you get it right, you'll get a 200$ bonus. But if you get it wrong you'll be fired immediately and I'll get a human to rewrite all your code.
