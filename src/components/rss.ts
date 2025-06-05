@@ -12,6 +12,7 @@ export class RSS extends LitElement {
   @state() private loading = false;
   @state() private error: string | null = null;
   @state() private displayCount = 7;
+  private autoRefreshInterval: number | undefined;
 
   static styles = css`
     :host {
@@ -151,6 +152,16 @@ export class RSS extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
     await this.loadFeed();
+    this.autoRefreshInterval = window.setInterval(() => {
+      this.loadFeed();
+    }, 5 * 60 * 1000); // 5 minutes
+  }
+
+  disconnectedCallback() {
+    if (this.autoRefreshInterval) {
+      clearInterval(this.autoRefreshInterval);
+    }
+    super.disconnectedCallback();
   }
 
   private async loadFeed() {
@@ -229,7 +240,7 @@ export class RSS extends LitElement {
 
     return html`
       <div class="header">
-        <span style="display: flex; align-items: center; gap: var(--fv-spacing-sm); min-width: 0;">
+        <span style="display: flex; align-items: center; gap: var(--fv-spacing-sm); min-width: 0; flex: 1;">
           <img
             src="${this.favicon || 'data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'10\' fill=\'%23ff9800\'/%3E%3Cpath d=\'M6 15a1 1 0 110-2 1 1 0 010 2zm2.5-1a1 1 0 110-2c3.59 0 6.5-2.91 6.5-6.5a1 1 0 112 0c0 4.694-3.806 8.5-8.5 8.5z\' fill=\'white\'/%3E%3C/svg%3E'}"
             alt="Favicon"
@@ -239,15 +250,8 @@ export class RSS extends LitElement {
               img.src = 'data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'10\' fill=\'%23ff9800\'/%3E%3Cpath d=\'M6 15a1 1 0 110-2 1 1 0 010 2zm2.5-1a1 1 0 110-2c3.59 0 6.5-2.91 6.5-6.5a1 1 0 112 0c0 4.694-3.806 8.5-8.5 8.5z\' fill=\'white\'/%3E%3C/svg%3E';
             }}
           />
-          <h2 class="title" style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;" title="${this.feedTitle}">${this.feedTitle}</h2>
+          <h2 class="title" style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;" title="${this.feedTitle}">${this.feedTitle}</h2>
         </span>
-        <button 
-          class="refresh-btn" 
-          @click=${this.loadFeed}
-          ?disabled=${this.loading}
-          title="Refresh feed">
-          ${this.loading ? '⟳' : '↻'}
-        </button>
       </div>
       <div class="content" @scroll=${this.handleScroll}>
         ${this.loading ? html`
