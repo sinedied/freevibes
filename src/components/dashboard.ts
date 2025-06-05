@@ -105,6 +105,33 @@ export class Dashboard extends LitElement {
     .drop-zone.drag-over::after {
       content: "Drop widget here";
     }
+
+    .resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      cursor: nw-resize;
+      background: linear-gradient(-45deg, transparent 0%, transparent 30%, var(--fv-border) 30%, var(--fv-border) 40%, transparent 40%, transparent 60%, var(--fv-border) 60%, var(--fv-border) 70%, transparent 70%);
+      opacity: 0;
+      transition: var(--fv-transition);
+      z-index: 10;
+    }
+
+    .widget:hover .resize-handle {
+      opacity: 0.6;
+    }
+
+    .resize-handle:hover {
+      opacity: 1 !important;
+      background: linear-gradient(-45deg, transparent 0%, transparent 30%, var(--fv-accent-primary) 30%, var(--fv-accent-primary) 40%, transparent 40%, transparent 60%, var(--fv-accent-primary) 60%, var(--fv-accent-primary) 70%, transparent 70%);
+    }
+
+    .widget.resizing {
+      transition: none;
+      box-shadow: 0 4px 12px var(--fv-shadow-hover);
+    }
   `;
 
   private handleWidgetUpdate(event: CustomEvent) {
@@ -125,27 +152,32 @@ export class Dashboard extends LitElement {
 
   private renderWidget(widget: Widget) {
     const isDragging = this._draggedId === widget.id;
+    const isResizing = this._resizingId === widget.id;
     return html`
       <div
-        class="widget"
+        class="widget ${isResizing ? 'resizing' : ''}"
         data-id=${widget.id}
         draggable="true"
         @dragstart=${(e: DragEvent) => this.handleDragStart(e, widget.id)}
         @dragend=${this.handleDragEnd}
         @dragover=${(e: DragEvent) => this.handleDragOver(e)}
         @drop=${(e: DragEvent) => this.handleDrop(e, widget.id)}
-        style="--widget-height: ${widget.height || 6}; ${isDragging ? 'opacity:0.5;' : ''}"
+        style="--widget-height: ${widget.height || 6}; ${isDragging ? 'opacity:0.5;' : ''} position: relative;"
       >
         ${widget.type === 'rss'
           ? html`<fv-rss .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-rss>`
           : widget.type === 'note'
             ? html`<fv-notes .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-notes>`
             : html`Unknown widget type`}
+        <div class="resize-handle" @mousedown=${(e: MouseEvent) => this.handleResizeStart(e, widget.id)}></div>
       </div>
     `;
   }
 
   private _draggedId: string | undefined = undefined;
+  private _resizingId: string | undefined = undefined;
+  private _resizeStartY: number = 0;
+  private _resizeStartHeight: number = 0;
 
   private handleDragStart(e: DragEvent, id: string) {
     this._draggedId = id;
@@ -210,6 +242,73 @@ export class Dashboard extends LitElement {
 
   private handleDragEnd = () => {
     this._draggedId = undefined;
+    this.requestUpdate();
+  };
+
+  private handleResizeStart = (e: MouseEvent, widgetId: string) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent widget drag from starting
+    
+    const widget = this.data.widgets.find(w => w.id === widgetId);
+    if (!widget) return;
+
+    this._resizingId = widgetId;
+    this._resizeStartY = e.clientY;
+    this._resizeStartHeight = widget.height || 6;
+
+    // Add global event listeners
+    document.addEventListener('mousemove', this.handleResize);
+    document.addEventListener('mouseup', this.handleResizeEnd);
+    
+    this.requestUpdate();
+  };
+
+  private handleResize = (e: MouseEvent) => {
+    if (!this._resizingId) return;
+    
+    const widget = this.data.widgets.find(w => w.id === this._resizingId);
+    if (!widget) return;
+
+    // Calculate height change based on mouse movement
+    // Each line is approximately 1.5em, so we convert pixels to lines
+    const deltaY = e.clientY - this._resizeStartY;
+    const lineHeight = 24; // Approximate height of one line in pixels (1.5em ≈ 24px)
+    const deltaLines = Math.round(deltaY / lineHeight);
+    
+    // Calculate new height with constraints
+    const newHeight = Math.max(2, Math.min(20, this._resizeStartHeight + deltaLines));
+    
+    // Update widget height temporarily for visual feedback
+    widget.height = newHeight;
+    this.requestUpdate();
+  };
+
+  private handleResizeEnd = () => {
+    if (!this._resizingId) return;
+
+    const widget = this.data.widgets.find(w => w.id === this._resizingId);
+    if (widget) {
+      // Save the updated widget data
+      const updatedData = {
+        ...this.data,
+        widgets: this.data.widgets.map(w => 
+          w.id === this._resizingId ? { ...w, height: widget.height } : w
+        )
+      };
+      
+      this.dispatchEvent(new CustomEvent('data-updated', {
+        detail: updatedData,
+        bubbles: true
+      }));
+    }
+
+    // Clean up
+    document.removeEventListener('mousemove', this.handleResize);
+    document.removeEventListener('mouseup', this.handleResizeEnd);
+    this._resizingId = undefined;
+    this._resizeStartY = 0;
+    this._resizeStartHeight = 0;
+    
     this.requestUpdate();
   };
 
