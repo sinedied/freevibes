@@ -55,6 +55,13 @@ export class Dashboard extends LitElement {
         grid-template-columns: repeat(2, 1fr);
       }
     }
+    .widget {
+      cursor: grab;
+    }
+    .widget:active {
+      cursor: grabbing;
+      opacity: 0.85;
+    }
   `;
 
   updated(changedProperties: Map<string, any>) {
@@ -78,30 +85,81 @@ export class Dashboard extends LitElement {
     }));
   }
 
-  private renderWidget(widget: Widget) {
-    switch (widget.type) {
-      case 'rss':
-        return html`
-          <div class="widget">
-            <fv-rss 
-              .widget=${widget as any} 
-              @widget-updated=${this.handleWidgetUpdate}>
-            </fv-rss>
-          </div>
-        `;
-      case 'note':
-        return html`
-          <div class="widget">
-            <fv-notes 
-              .widget=${widget as any} 
-              @widget-updated=${this.handleWidgetUpdate}>
-            </fv-notes>
-          </div>
-        `;
-      default:
-        return html`<div class="widget">Unknown widget type</div>`;
-    }
+
+  private renderWidget(widget: Widget, index: number) {
+    const isDragging = this._draggedId === widget.id;
+    return html`
+      <div
+        class="widget"
+        data-id=${widget.id}
+        draggable="true"
+        @dragstart=${(e: DragEvent) => this.handleDragStart(e, widget.id)}
+        @dragend=${this.handleDragEnd}
+        @dragover=${(e: DragEvent) => this.handleDragOver(e, widget.id)}
+        @drop=${(e: DragEvent) => this.handleDrop(e, widget.id)}
+        style=${isDragging ? 'opacity:0.5;' : ''}
+      >
+        ${widget.type === 'rss'
+          ? html`<fv-rss .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-rss>`
+          : widget.type === 'note'
+            ? html`<fv-notes .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-notes>`
+            : html`Unknown widget type`}
+      </div>
+    `;
   }
+
+  private _draggedId: string | null = null;
+
+  private handleDragStart(e: DragEvent, id: string) {
+    this._draggedId = id;
+    e.dataTransfer?.setData('text/plain', id);
+    e.dataTransfer!.effectAllowed = 'move';
+  }
+
+  private handleDragOver(e: DragEvent, id: string) {
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = 'move';
+  }
+
+  private handleDrop(e: DragEvent, targetId: string) {
+    e.preventDefault();
+    const fromId = this._draggedId;
+    if (!fromId || fromId === targetId) return;
+
+    // 1. Trie les widgets par position pour obtenir l'ordre visuel actuel
+    const sorted = [...this.data.widgets].sort((a, b) => {
+      if (a.position.row !== b.position.row) return a.position.row - b.position.row;
+      return a.position.col - b.position.col;
+    });
+
+    // 2. Trouve les index source et cible dans ce tableau trié
+    const fromIndex = sorted.findIndex(w => w.id === fromId);
+    const toIndex = sorted.findIndex(w => w.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    // 3. Déplace le widget dans le tableau trié
+    const [moved] = sorted.splice(fromIndex, 1);
+    sorted.splice(toIndex, 0, moved);
+
+    // 4. Recalcule les positions (row) pour refléter le nouvel ordre
+    const updatedWidgets = sorted.map((w, i) => ({
+      ...w,
+      position: { ...w.position, row: (i + 1) * 1000 }
+    }));
+
+    // 5. Mets à jour le tableau d'origine dans le même ordre que sorted
+    const updatedData = { ...this.data, widgets: updatedWidgets };
+    this._draggedId = null;
+    this.dispatchEvent(new CustomEvent('data-updated', {
+      detail: updatedData,
+      bubbles: true
+    }));
+  }
+
+  private handleDragEnd = () => {
+    this._draggedId = null;
+    this.requestUpdate();
+  };
 
   render() {
     if (!this.data.widgets.length) {
@@ -124,7 +182,7 @@ export class Dashboard extends LitElement {
 
     return html`
       <div class="dashboard">
-        ${sortedWidgets.map(widget => this.renderWidget(widget))}
+        ${sortedWidgets.map((widget, i) => this.renderWidget(widget, i))}
       </div>
     `;
   }
