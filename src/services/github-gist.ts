@@ -24,6 +24,12 @@ async function login(token: string) {
   state.gistId = await findGistId();
 }
 
+function logout() {
+  state.token = undefined;
+  state.gistId = undefined;
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 async function findGistId(): Promise<string | undefined> {
   if (!state.token) throw new Error('No GitHub token');
   let page = 1;
@@ -117,6 +123,7 @@ async function apiCall(path: string, method = 'GET', body?: any) {
 
 export const githubGistService = {
   login,
+  logout,
   loadData,
   saveData
 };

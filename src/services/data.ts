@@ -50,6 +50,12 @@ class DataService {
     }
   }
 
+  logout() {
+    githubGistService.logout();
+    this.useGist = false;
+    // Don't clear this.data - keep local data available
+  }
+
   async loadData(): Promise<DashboardData> {
     if (this.useGist) {
       try {

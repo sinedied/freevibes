@@ -80,6 +80,23 @@ export class App extends LitElement {
       background-color: var(--fv-accent-hover);
     }
 
+    .logout-btn {
+      background: none;
+      border: 1px solid var(--fv-border);
+      border-radius: var(--fv-border-radius);
+      padding: var(--fv-spacing-sm) var(--fv-spacing-md);
+      color: var(--fv-text-secondary);
+      cursor: pointer;
+      font-size: var(--fv-font-size-sm);
+      transition: var(--fv-transition);
+    }
+
+    .logout-btn:hover {
+      background-color: var(--fv-bg-tertiary);
+      border-color: var(--fv-danger);
+      color: var(--fv-danger);
+    }
+
     .main {
       padding: var(--fv-spacing-lg);
     }
@@ -183,6 +200,12 @@ export class App extends LitElement {
     this.showSettings = false;
   }
 
+  private handleLogout() {
+    dataService.logout();
+    this.githubLoggedIn = false;
+    // No need to reload data since we keep local data
+  }
+
   private openSettings() {
     this.showSettings = true;
   }
@@ -244,6 +267,9 @@ export class App extends LitElement {
             <span>${this.data.settings.darkMode ? 'Light' : 'Dark'}</span>
           </button>
           <button class="settings-btn" @click=${this.openSettings}>Settings</button>
+          ${this.githubLoggedIn ? html`
+            <button class="logout-btn" @click=${this.handleLogout}>Logout</button>
+          ` : ''}
         </nav>
       </div>
       <main class="main">
