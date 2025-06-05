@@ -60,8 +60,8 @@ class GithubGistService {
         {
           id: 'rss-2',
           type: 'rss',
-          title: 'Gameblog',
-          feedUrl: 'https://www.gameblog.fr/rssmap/rss_all.xml',
+          title: 'GitHub Blog',
+          feedUrl: 'https://github.blog/feed/',
           position: { row: 2000, col: 1 }
         },
         {
