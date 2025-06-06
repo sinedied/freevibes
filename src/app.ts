@@ -249,8 +249,11 @@ export class App extends LitElement {
     document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
   }
 
-  private handleDataUpdate(updateEvent: CustomEvent) {
+  private async handleDataUpdate(updateEvent: CustomEvent) {
     this.data = updateEvent.detail;
+    if (this.data) {
+      await dataService.saveData(this.data);
+    }
   }
 
   private handleSettingsUpdate(updateEvent: CustomEvent) {

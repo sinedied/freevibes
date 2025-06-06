@@ -13,10 +13,12 @@ export class RSS extends LitElement {
   @state() private error: string | undefined = undefined;
   @state() private displayCount = 7;
   private autoRefreshInterval: number | undefined;
+  private lastKnownHeight: number = 6;
 
   static styles = css`
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
       height: 100%;
     }
 
@@ -60,7 +62,7 @@ export class RSS extends LitElement {
 
     .content {
       padding: var(--fv-spacing-sm);
-      height: 200px;
+      flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
       position: relative;
@@ -176,6 +178,7 @@ export class RSS extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
+    this.lastKnownHeight = this.widget.height || 6;
     await this.loadFeed();
     this.autoRefreshInterval = window.setInterval(() => {
       this.loadFeed();
@@ -189,15 +192,41 @@ export class RSS extends LitElement {
     super.disconnectedCallback();
   }
 
+  updated(changedProperties: Map<string | number | symbol, unknown>) {
+    super.updated(changedProperties);
+    
+    // Check if widget height has changed
+    if (changedProperties.has('widget')) {
+      const currentHeight = this.widget.height || 6;
+      if (currentHeight !== this.lastKnownHeight) {
+        this.lastKnownHeight = currentHeight;
+        this.updateDisplayCount();
+      }
+    }
+  }
+
+  private updateDisplayCount() {
+    // Calculate how many items can fit based on widget height
+    const height = this.widget.height || 6;
+    
+    // Each item takes approximately 1 line of height
+    // We subtract 2 lines for the header and padding
+    const availableLines = Math.max(1, height - 2);
+    
+    // Set display count to fit the available space plus 5 more for scrollability
+    this.displayCount = Math.min(availableLines + 5, this.items.length);
+  }
+
   private async loadFeed() {
     this.loading = true;
     this.error = undefined;
-    this.displayCount = 7;
     try {
       const result = await rssService.fetchFeed(this.widget.feedUrl);
       this.items = result.items;
       this.feedTitle = result.feed.title || this.widget.title;
       this.favicon = result.feed.favicon;
+      // Update display count after loading items
+      this.updateDisplayCount();
     } catch (error) {
       this.error = 'Failed to load RSS feed';
       this.feedTitle = this.widget.title;
@@ -249,6 +278,7 @@ export class RSS extends LitElement {
 
   private loadMoreItems() {
     if (this.displayCount < this.items.length) {
+      // Load 7 more items when scrolling
       this.displayCount = Math.min(this.displayCount + 7, this.items.length);
     }
   }
