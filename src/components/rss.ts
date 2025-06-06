@@ -16,7 +16,8 @@ export class RSS extends LitElement {
 
   static styles = css`
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
       height: 100%;
     }
 
@@ -60,7 +61,7 @@ export class RSS extends LitElement {
 
     .content {
       padding: var(--fv-spacing-sm);
-      height: 200px;
+      flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
       position: relative;

@@ -11,7 +11,8 @@ export class Notes extends LitElement {
 
   static styles = css`
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
       height: 100%;
     }
 
@@ -55,7 +56,7 @@ export class Notes extends LitElement {
 
     .content {
       padding: var(--fv-spacing-sm);
-      height: 200px;
+      flex: 1;
       overflow-y: auto;
       background-color: var(--note-bg);
       position: relative;
@@ -107,7 +108,6 @@ export class Notes extends LitElement {
     .edit-textarea {
       width: 100%;
       height: 100%;
-      min-height: 200px;
       border: none;
       outline: none;
       resize: none;
