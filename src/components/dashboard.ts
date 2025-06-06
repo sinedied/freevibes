@@ -78,7 +78,11 @@ export class Dashboard extends LitElement {
     .widget {
       transition: var(--fv-transition);
       position: relative;
-      cursor: default;
+      cursor: grab;
+    }
+
+    .widget:active {
+      cursor: grabbing;
     }
 
     .widget.dragging {
@@ -91,15 +95,6 @@ export class Dashboard extends LitElement {
     .widget.drag-placeholder {
       opacity: 0.3;
       transform: scale(0.95);
-    }
-
-    /* Style to indicate headers are draggable */
-    .widget:hover {
-      cursor: grab;
-    }
-
-    .widget:active {
-      cursor: grabbing;
     }
 
     .drop-zone {
@@ -153,10 +148,12 @@ export class Dashboard extends LitElement {
       opacity: 0;
       transition: var(--fv-transition);
       z-index: 10;
+      pointer-events: none;
     }
 
     .widget:hover .resize-handle {
       opacity: 0.6;
+      pointer-events: auto;
     }
 
     .resize-handle:hover {
@@ -167,6 +164,10 @@ export class Dashboard extends LitElement {
     .widget.resizing {
       transition: none;
       box-shadow: 0 4px 12px var(--fv-shadow-hover);
+    }
+
+    .widget.resizing .resize-handle {
+      pointer-events: auto;
     }
   `;
 
@@ -221,53 +222,12 @@ export class Dashboard extends LitElement {
   }
 
   private handleDragStart(e: DragEvent, id: string) {
-    // Check if the drag started from a header element
-    const target = e.target as Element;
-    const isFromHeader = this.isDragFromHeader(target);
-    
-    if (!isFromHeader) {
-      e.preventDefault();
-      return false;
-    }
-    
     this._draggedId = id;
     e.dataTransfer?.setData('text/plain', id);
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
     }
     this.requestUpdate();
-  }
-
-  private isDragFromHeader(element: Element): boolean {
-    // Walk up the DOM tree to see if we're inside a header
-    let current = element;
-    let depth = 0;
-    
-    while (current && depth < 10) { // Limit depth to prevent infinite loops
-      if (current.classList?.contains('header') || 
-          current.tagName?.toLowerCase() === 'header' ||
-          current.closest?.('.header')) {
-        return true;
-      }
-      
-      // Check if we're in a shadow root and get the host
-      if (current.getRootNode() instanceof ShadowRoot) {
-        const shadowRoot = current.getRootNode() as ShadowRoot;
-        if (shadowRoot.host) {
-          // Check inside the shadow root for header elements
-          const headerInShadow = shadowRoot.querySelector('.header');
-          if (headerInShadow && headerInShadow.contains(element)) {
-            return true;
-          }
-          current = shadowRoot.host;
-        }
-      } else {
-        current = current.parentElement!;
-      }
-      depth++;
-    }
-    
-    return false;
   }
 
   private handleDragEnd = () => {
