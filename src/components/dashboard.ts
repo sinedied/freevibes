@@ -87,7 +87,6 @@ export class Dashboard extends LitElement {
 
     .widget.dragging {
       opacity: 0.5;
-      transform: rotate(2deg);
       z-index: 1000;
       box-shadow: 0 8px 25px var(--fv-shadow-hover);
     }
@@ -265,16 +264,15 @@ export class Dashboard extends LitElement {
     
     if (!fromWidget) return;
 
-    // Remove the dragged widget from its current position
-    const fromIndex = widgets.findIndex(w => w.id === fromId);
-    widgets.splice(fromIndex, 1);
+    // Store the original column before modifying the widget
+    const originalColumn = fromWidget.position.column;
 
     // Update the dragged widget's position
     fromWidget.position.column = column;
 
-    // Get widgets in the target column and sort by order
+    // Get widgets in the target column (excluding the dragged widget)
     const columnWidgets = widgets
-      .filter(w => w.position.column === column)
+      .filter(w => w.position.column === column && w.id !== fromId)
       .sort((a, b) => a.position.order - b.position.order);
 
     // Insert the widget at the specified position
@@ -290,9 +288,9 @@ export class Dashboard extends LitElement {
     });
 
     // If the widget moved to a different column, reorder the original column too
-    if (fromWidget.position.column !== column) {
+    if (originalColumn !== column) {
       const originalColumnWidgets = widgets
-        .filter(w => w.position.column === fromWidget.position.column && w.id !== fromId)
+        .filter(w => w.position.column === originalColumn && w.id !== fromId)
         .sort((a, b) => a.position.order - b.position.order);
       
       originalColumnWidgets.forEach((widget, index) => {
