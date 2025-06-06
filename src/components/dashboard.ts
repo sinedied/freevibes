@@ -78,6 +78,7 @@ export class Dashboard extends LitElement {
     .widget {
       transition: var(--fv-transition);
       position: relative;
+      cursor: default;
     }
 
     .widget.dragging {
@@ -90,6 +91,15 @@ export class Dashboard extends LitElement {
     .widget.drag-placeholder {
       opacity: 0.3;
       transform: scale(0.95);
+    }
+
+    /* Style to indicate headers are draggable */
+    .widget:hover {
+      cursor: grab;
+    }
+
+    .widget:active {
+      cursor: grabbing;
     }
 
     .drop-zone {
@@ -185,6 +195,9 @@ export class Dashboard extends LitElement {
       <div
         class="widget ${isDragging ? 'dragging' : ''} ${isPlaceholder ? 'drag-placeholder' : ''} ${isResizing ? 'resizing' : ''}"
         data-id=${widget.id}
+        draggable="true"
+        @dragstart=${(e: DragEvent) => this.handleDragStart(e, widget.id)}
+        @dragend=${this.handleDragEnd}
         style="--widget-height: ${widget.height || 6}; position: relative;"
       >
         ${widget.type === 'rss'
@@ -205,70 +218,56 @@ export class Dashboard extends LitElement {
 
   protected updated(changedProperties: Map<string | number | symbol, unknown>) {
     super.updated(changedProperties);
-    this.setupDragHandles();
-  }
-
-  private setupDragHandles() {
-    // Find all widget elements and set up drag handling on their headers
-    const widgets = this.shadowRoot?.querySelectorAll('.widget');
-    widgets?.forEach(widget => {
-      const widgetId = widget.getAttribute('data-id');
-      if (!widgetId) return;
-
-      // Find the header inside the widget component
-      const rssComponent = widget.querySelector('fv-rss');
-      const notesComponent = widget.querySelector('fv-notes');
-      
-      if (rssComponent) {
-        const header = rssComponent.shadowRoot?.querySelector('.header');
-        if (header) {
-          this.makeDraggable(header, widgetId);
-        }
-      }
-      
-      if (notesComponent) {
-        const header = notesComponent.shadowRoot?.querySelector('.header');
-        if (header) {
-          this.makeDraggable(header, widgetId);
-        }
-      }
-    });
-  }
-
-  private makeDraggable(element: Element, widgetId: string) {
-    const htmlElement = element as HTMLElement;
-    htmlElement.draggable = true;
-    htmlElement.style.cursor = 'grab';
-    htmlElement.style.userSelect = 'none';
-    
-    // Remove existing listeners to avoid duplicates
-    htmlElement.removeEventListener('dragstart', this.createDragStartHandler(widgetId));
-    htmlElement.removeEventListener('dragend', this.handleDragEnd);
-    
-    // Add new listeners
-    htmlElement.addEventListener('dragstart', this.createDragStartHandler(widgetId));
-    htmlElement.addEventListener('dragend', this.handleDragEnd);
-    
-    htmlElement.addEventListener('mousedown', () => {
-      htmlElement.style.cursor = 'grabbing';
-    });
-    
-    htmlElement.addEventListener('mouseup', () => {
-      htmlElement.style.cursor = 'grab';
-    });
-  }
-
-  private createDragStartHandler(widgetId: string) {
-    return (e: DragEvent) => this.handleDragStart(e, widgetId);
   }
 
   private handleDragStart(e: DragEvent, id: string) {
+    // Check if the drag started from a header element
+    const target = e.target as Element;
+    const isFromHeader = this.isDragFromHeader(target);
+    
+    if (!isFromHeader) {
+      e.preventDefault();
+      return false;
+    }
+    
     this._draggedId = id;
     e.dataTransfer?.setData('text/plain', id);
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
     }
     this.requestUpdate();
+  }
+
+  private isDragFromHeader(element: Element): boolean {
+    // Walk up the DOM tree to see if we're inside a header
+    let current = element;
+    let depth = 0;
+    
+    while (current && depth < 10) { // Limit depth to prevent infinite loops
+      if (current.classList?.contains('header') || 
+          current.tagName?.toLowerCase() === 'header' ||
+          current.closest?.('.header')) {
+        return true;
+      }
+      
+      // Check if we're in a shadow root and get the host
+      if (current.getRootNode() instanceof ShadowRoot) {
+        const shadowRoot = current.getRootNode() as ShadowRoot;
+        if (shadowRoot.host) {
+          // Check inside the shadow root for header elements
+          const headerInShadow = shadowRoot.querySelector('.header');
+          if (headerInShadow && headerInShadow.contains(element)) {
+            return true;
+          }
+          current = shadowRoot.host;
+        }
+      } else {
+        current = current.parentElement!;
+      }
+      depth++;
+    }
+    
+    return false;
   }
 
   private handleDragEnd = () => {
