@@ -213,8 +213,8 @@ export class RSS extends LitElement {
     // We subtract 2 lines for the header and padding
     const availableLines = Math.max(1, height - 2);
     
-    // Set display count to fit the available space
-    this.displayCount = Math.min(availableLines, this.items.length);
+    // Set display count to fit the available space plus 5 more for scrollability
+    this.displayCount = Math.min(availableLines + 5, this.items.length);
   }
 
   private async loadFeed() {
