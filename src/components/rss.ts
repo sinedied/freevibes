@@ -178,6 +178,7 @@ export class RSS extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
     await this.loadFeed();
+    this.calculateDisplayCount();
     this.autoRefreshInterval = window.setInterval(() => {
       this.loadFeed();
     }, 5 * 60 * 1000); // 5 minutes
@@ -190,15 +191,41 @@ export class RSS extends LitElement {
     super.disconnectedCallback();
   }
 
+  updated(changedProperties: Map<string, any>) {
+    super.updated(changedProperties);
+    
+    // Check if widget height changed
+    if (changedProperties.has('widget')) {
+      const oldWidget = changedProperties.get('widget');
+      if (oldWidget && oldWidget.height !== this.widget.height) {
+        this.calculateDisplayCount();
+      }
+    }
+  }
+
+  private calculateDisplayCount() {
+    // Calculate how many items should be displayed based on widget height
+    // Each item is approximately 2 lines (title + padding), header is ~2 lines
+    // So available space for items = (height - 2) / 2
+    const headerLines = 2;
+    const itemLines = 2;
+    const totalLines = this.widget.height || 6;
+    const availableLines = Math.max(1, totalLines - headerLines);
+    const maxDisplayItems = Math.floor(availableLines / itemLines);
+    
+    // Ensure we show at least 3 items but respect the calculated maximum
+    this.displayCount = Math.max(3, Math.min(maxDisplayItems, this.items.length));
+  }
+
   private async loadFeed() {
     this.loading = true;
     this.error = undefined;
-    this.displayCount = 7;
     try {
       const result = await rssService.fetchFeed(this.widget.feedUrl);
       this.items = result.items;
       this.feedTitle = result.feed.title || this.widget.title;
       this.favicon = result.feed.favicon;
+      this.calculateDisplayCount();
     } catch (error) {
       this.error = 'Failed to load RSS feed';
       this.feedTitle = this.widget.title;
@@ -250,7 +277,9 @@ export class RSS extends LitElement {
 
   private loadMoreItems() {
     if (this.displayCount < this.items.length) {
-      this.displayCount = Math.min(this.displayCount + 7, this.items.length);
+      // Load more items, but add a reasonable batch size
+      const batchSize = Math.max(3, Math.floor((this.widget.height || 6) / 2));
+      this.displayCount = Math.min(this.displayCount + batchSize, this.items.length);
     }
   }
 
