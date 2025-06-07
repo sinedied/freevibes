@@ -46,25 +46,6 @@ export class App extends LitElement {
       gap: var(--fv-spacing-md);
     }
 
-    .theme-toggle {
-      background: none;
-      border: 1px solid var(--fv-border);
-      border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-sm);
-      color: var(--fv-text-primary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: var(--fv-spacing-xs);
-      font-size: var(--fv-font-size-sm);
-      transition: var(--fv-transition);
-    }
-
-    .theme-toggle:hover {
-      background-color: var(--fv-bg-tertiary);
-      border-color: var(--fv-accent-primary);
-    }
-
     .settings-btn {
       background: var(--fv-accent-primary);
       border: none;
@@ -201,6 +182,14 @@ export class App extends LitElement {
     }
     await this.loadDashboardData();
     this.applyTheme();
+    
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', () => {
+      if (this.data?.settings.darkModeType === 'system') {
+        this.applyTheme();
+      }
+    });
   }
 
   private async loadDashboardData() {
@@ -235,18 +224,65 @@ export class App extends LitElement {
     this.loginToken = (inputEvent.target as HTMLInputElement).value;
   }
 
-  private toggleTheme() {
-    if (!this.data) return;
+  private adjustColorBrightness(hex: string, amount: number): string {
+    // Remove # if present
+    hex = hex.replace('#', '');
     
-    const newDarkModeState = !this.data.settings.darkMode;
-    dataService.updateSettings({ darkMode: newDarkModeState });
-    this.data = { ...this.data, settings: { ...this.data.settings, darkMode: newDarkModeState } };
-    this.applyTheme();
+    // Parse r, g, b values
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Adjust brightness
+    const newR = Math.max(0, Math.min(255, r + amount));
+    const newG = Math.max(0, Math.min(255, g + amount));
+    const newB = Math.max(0, Math.min(255, b + amount));
+    
+    // Convert back to hex
+    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
   }
 
   private applyTheme() {
-    const isDarkMode = this.data?.settings.darkMode ?? false;
+    const settings = this.data?.settings;
+    if (!settings) return;
+
+    let isDarkMode = false;
+    
+    switch (settings.darkModeType) {
+      case 'on':
+        isDarkMode = true;
+        break;
+      case 'off':
+        isDarkMode = false;
+        break;
+      case 'system':
+        isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        break;
+    }
+
+    // Update darkMode boolean for backward compatibility
+    if (settings.darkMode !== isDarkMode) {
+      settings.darkMode = isDarkMode;
+    }
+
     document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    
+    // Apply custom colors
+    if (settings.mainColor) {
+      document.documentElement.style.setProperty('--fv-accent-primary', settings.mainColor);
+      // Calculate a slightly darker hover color
+      const color = this.adjustColorBrightness(settings.mainColor, -20);
+      document.documentElement.style.setProperty('--fv-accent-hover', color);
+    }
+    
+    if (settings.backgroundColor && !isDarkMode) {
+      document.documentElement.style.setProperty('--fv-bg-primary', settings.backgroundColor);
+    }
+    
+    // Apply font size
+    if (settings.fontSize) {
+      document.documentElement.style.setProperty('--fv-font-size-base', `${settings.fontSize}px`);
+    }
   }
 
   private async handleDataUpdate(updateEvent: CustomEvent) {
@@ -324,10 +360,6 @@ export class App extends LitElement {
       <div class="header">
         <a href="/" class="logo">FreeVibes</a>
         <nav class="nav">
-          <button class="theme-toggle" @click=${this.toggleTheme}>
-            <span>${this.data.settings.darkMode ? '☀️' : '🌙'}</span>
-            <span>${this.data.settings.darkMode ? 'Light' : 'Dark'}</span>
-          </button>
           <button class="settings-btn" @click=${this.openSettings}>Settings</button>
           ${this.githubLoggedIn ? html`
             <button class="logout-btn" @click=${this.handleLogout}>Logout</button>
