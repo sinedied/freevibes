@@ -27,6 +27,7 @@ export class Dashboard extends LitElement {
       flex-direction: column;
       gap: var(--fv-widget-gap);
       min-width: 0; /* Prevent flex item from overflowing */
+      transition: all 0.2s ease;
     }
 
     .widget {
@@ -76,33 +77,88 @@ export class Dashboard extends LitElement {
     }
 
     .widget {
+      transition: var(--fv-transition);
+      position: relative;
       cursor: grab;
     }
+
     .widget:active {
       cursor: grabbing;
-      opacity: 0.85;
+    }
+
+    .widget.dragging {
+      opacity: 0.5;
+      z-index: 1000;
+      box-shadow: 0 8px 25px var(--fv-shadow-hover);
+    }
+
+    .widget.drag-placeholder {
+      opacity: 0.3;
+      transform: scale(0.95);
     }
 
     .drop-zone {
-      min-height: 2em;
-      border: 2px dashed transparent;
       border-radius: var(--fv-border-radius);
-      transition: var(--fv-transition);
-      margin: var(--fv-spacing-xs) 0;
+      transition: all 0.2s ease;
+      height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin: 0;
+      border: 2px dashed transparent;
+    }
+
+    :host(.dragging) .drop-zone {
+      height: 40px;
+      opacity: 1;
+      margin: 8px 0;
+      border-color: var(--fv-accent-primary);
+      background-color: rgba(0, 123, 255, 0.05);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--fv-text-muted);
+      color: var(--fv-accent-primary);
       font-size: var(--fv-font-size-sm);
     }
 
-    .drop-zone.drag-over {
-      border-color: var(--fv-accent-primary);
-      background-color: var(--fv-bg-tertiary);
-      color: var(--fv-accent-primary);
+    :host(.dragging) .drop-zone::after {
+      content: "Drop widget here";
     }
 
-    .drop-zone.drag-over::after {
+    .drop-zone.drag-active {
+      background-color: rgba(0, 123, 255, 0.15);
+      transform: scale(1.02);
+    }
+
+    /* Empty columns while dragging */
+    :host(.dragging) .column:empty {
+      min-height: 100px;
+      border: 2px dashed rgba(0, 123, 255, 0.3);
+      background-color: rgba(0, 123, 255, 0.02);
+      border-radius: var(--fv-border-radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fv-text-secondary);
+      font-size: var(--fv-font-size-sm);
+    }
+
+    :host(.dragging) .column:empty::after {
+      content: "Drop widget here";
+    }
+
+    :host(.dragging) .column.drag-over-empty {
+      min-height: 200px;
+      border: 2px dashed var(--fv-accent-primary);
+      background-color: rgba(0, 123, 255, 0.05);
+      border-radius: var(--fv-border-radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fv-accent-primary);
+      font-size: var(--fv-font-size-sm);
+    }
+
+    :host(.dragging) .column.drag-over-empty::after {
       content: "Drop widget here";
     }
 
@@ -117,10 +173,12 @@ export class Dashboard extends LitElement {
       opacity: 0;
       transition: var(--fv-transition);
       z-index: 10;
+      pointer-events: none;
     }
 
     .widget:hover .resize-handle {
       opacity: 0.6;
+      pointer-events: auto;
     }
 
     .resize-handle:hover {
@@ -131,6 +189,10 @@ export class Dashboard extends LitElement {
     .widget.resizing {
       transition: none;
       box-shadow: 0 4px 12px var(--fv-shadow-hover);
+    }
+
+    .widget.resizing .resize-handle {
+      pointer-events: auto;
     }
   `;
 
@@ -153,16 +215,16 @@ export class Dashboard extends LitElement {
   private renderWidget(widget: Widget) {
     const isDragging = this._draggedId === widget.id;
     const isResizing = this._resizingId === widget.id;
+    const isPlaceholder = this._draggedId && this._draggedId !== widget.id && this._dragTargetId === widget.id;
+    
     return html`
       <div
-        class="widget ${isResizing ? 'resizing' : ''}"
+        class="widget ${isDragging ? 'dragging' : ''} ${isPlaceholder ? 'drag-placeholder' : ''} ${isResizing ? 'resizing' : ''}"
         data-id=${widget.id}
         draggable="true"
         @dragstart=${(e: DragEvent) => this.handleDragStart(e, widget.id)}
         @dragend=${this.handleDragEnd}
-        @dragover=${(e: DragEvent) => this.handleDragOver(e)}
-        @drop=${(e: DragEvent) => this.handleDrop(e, widget.id)}
-        style="--widget-height: ${widget.height || 6}; ${isDragging ? 'opacity:0.5;' : ''} position: relative;"
+        style="--widget-height: ${widget.height || 6}; position: relative;"
       >
         ${widget.type === 'rss'
           ? html`<fv-rss .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-rss>`
@@ -175,9 +237,14 @@ export class Dashboard extends LitElement {
   }
 
   private _draggedId: string | undefined = undefined;
+  private _dragTargetId: string | undefined = undefined;
   private _resizingId: string | undefined = undefined;
   private _resizeStartY: number = 0;
   private _resizeStartHeight: number = 0;
+
+  protected updated(changedProperties: Map<string | number | symbol, unknown>) {
+    super.updated(changedProperties);
+  }
 
   private handleDragStart(e: DragEvent, id: string) {
     this._draggedId = id;
@@ -185,65 +252,137 @@ export class Dashboard extends LitElement {
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
     }
-  }
-
-  private handleDragOver(e: DragEvent) {
-    e.preventDefault();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'move';
-    }
-  }
-
-  private handleDrop(e: DragEvent, targetId: string) {
-    e.preventDefault();
-    const fromId = this._draggedId;
-    if (!fromId || fromId === targetId) return;
-
-    const widgets = [...this.data.widgets];
-    const fromWidget = widgets.find(w => w.id === fromId);
-    const targetWidget = widgets.find(w => w.id === targetId);
-    
-    if (!fromWidget || !targetWidget) return;
-
-    // If dropping on the same widget, do nothing
-    if (fromWidget.id === targetWidget.id) return;
-
-    // Get widgets in the target column
-    const targetColumn = targetWidget.position.column;
-
-    // Remove the dragged widget from its current position
-    const fromIndex = widgets.findIndex(w => w.id === fromId);
-    widgets.splice(fromIndex, 1);
-
-    // Update the dragged widget's position
-    fromWidget.position.column = targetColumn;
-    fromWidget.position.order = targetWidget.position.order;
-
-    // Insert the widget at the target position
-    const updatedIndex = widgets.findIndex(w => w.id === targetId);
-    widgets.splice(updatedIndex, 0, fromWidget);
-
-    // Reorder widgets in the target column
-    const updatedColumnWidgets = widgets
-      .filter(w => w.position.column === targetColumn)
-      .sort((a, b) => widgets.indexOf(a) - widgets.indexOf(b));
-    
-    updatedColumnWidgets.forEach((widget, index) => {
-      widget.position.order = (index + 1) * 1000;
-    });
-
-    const updatedData = { ...this.data, widgets };
-    this._draggedId = undefined;
-    this.dispatchEvent(new CustomEvent('data-updated', {
-      detail: updatedData,
-      bubbles: true
-    }));
+    // Add dragging class to host for CSS styling
+    this.classList.add('dragging');
+    this.requestUpdate();
   }
 
   private handleDragEnd = () => {
     this._draggedId = undefined;
+    this._dragTargetId = undefined;
+    // Remove dragging class from host
+    this.classList.remove('dragging');
     this.requestUpdate();
   };
+
+  private handleDropZoneDragOver(e: DragEvent, _column: number, _position: number) {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    
+    // Set visual feedback
+    const target = e.currentTarget as HTMLElement;
+    target.classList.add('drag-active');
+  }
+
+  private handleDropZoneDragLeave(e: DragEvent) {
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-active');
+  }
+
+  private handleDropZoneDrop(e: DragEvent, column: number, position: number) {
+    e.preventDefault();
+    const fromId = this._draggedId;
+    if (!fromId) return;
+
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-active');
+
+    const widgets = [...this.data.widgets];
+    const fromWidget = widgets.find(w => w.id === fromId);
+    
+    if (!fromWidget) return;
+
+    // Store the original column before modifying the widget
+    const originalColumn = fromWidget.position.column;
+
+    // Update the dragged widget's position
+    fromWidget.position.column = column;
+
+    // Get widgets in the target column (excluding the dragged widget)
+    const columnWidgets = widgets
+      .filter(w => w.position.column === column && w.id !== fromId)
+      .sort((a, b) => a.position.order - b.position.order);
+
+    // Insert the widget at the specified position
+    if (position <= columnWidgets.length) {
+      columnWidgets.splice(position, 0, fromWidget);
+    } else {
+      columnWidgets.push(fromWidget);
+    }
+
+    // Reorder all widgets in the target column
+    columnWidgets.forEach((widget, index) => {
+      widget.position.order = (index + 1) * 1000;
+    });
+
+    // If the widget moved to a different column, reorder the original column too
+    if (originalColumn !== column) {
+      const originalColumnWidgets = widgets
+        .filter(w => w.position.column === originalColumn && w.id !== fromId)
+        .sort((a, b) => a.position.order - b.position.order);
+      
+      originalColumnWidgets.forEach((widget, index) => {
+        widget.position.order = (index + 1) * 1000;
+      });
+    }
+
+    const updatedData = { ...this.data, widgets };
+    this._draggedId = undefined;
+    this._dragTargetId = undefined;
+    
+    this.dispatchEvent(new CustomEvent('data-updated', {
+      detail: updatedData,
+      bubbles: true
+    }));
+    
+    this.requestUpdate();
+  }
+
+  private handleEmptyColumnDragOver(e: DragEvent, _column: number) {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    
+    const target = e.currentTarget as HTMLElement;
+    target.classList.add('drag-over-empty');
+  }
+
+  private handleEmptyColumnDragLeave(e: DragEvent) {
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-over-empty');
+  }
+
+  private handleEmptyColumnDrop(e: DragEvent, column: number) {
+    e.preventDefault();
+    const fromId = this._draggedId;
+    if (!fromId) return;
+
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-over-empty');
+
+    const widgets = [...this.data.widgets];
+    const fromWidget = widgets.find(w => w.id === fromId);
+    
+    if (!fromWidget) return;
+
+    // Move widget to the empty column
+    fromWidget.position.column = column;
+    fromWidget.position.order = 1000; // First in the column
+
+    const updatedData = { ...this.data, widgets };
+    this._draggedId = undefined;
+    this._dragTargetId = undefined;
+    
+    this.dispatchEvent(new CustomEvent('data-updated', {
+      detail: updatedData,
+      bubbles: true
+    }));
+    
+    this.requestUpdate();
+  }
 
   private handleResizeStart = (e: MouseEvent, widgetId: string) => {
     e.preventDefault();
@@ -312,49 +451,6 @@ export class Dashboard extends LitElement {
     this.requestUpdate();
   };
 
-  private handleColumnDragOver(e: DragEvent, _column: number) {
-    e.preventDefault();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'move';
-    }
-    // Add visual feedback
-    const target = e.currentTarget as HTMLElement;
-    target.classList.add('drag-over');
-  }
-
-  private handleColumnDragLeave(e: DragEvent) {
-    // Remove visual feedback when dragging leaves
-    const target = e.currentTarget as HTMLElement;
-    target.classList.remove('drag-over');
-  }
-
-  private handleColumnDrop(e: DragEvent, column: number) {
-    e.preventDefault();
-    const fromId = this._draggedId;
-    if (!fromId) return;
-
-    const widgets = [...this.data.widgets];
-    const fromWidget = widgets.find(w => w.id === fromId);
-    
-    if (!fromWidget) return;
-
-    // Move widget to the empty column
-    fromWidget.position.column = column;
-    fromWidget.position.order = 1000; // First in the column
-
-    const updatedData = { ...this.data, widgets };
-    this._draggedId = undefined;
-    
-    // Remove visual feedback
-    const target = e.currentTarget as HTMLElement;
-    target.classList.remove('drag-over');
-    
-    this.dispatchEvent(new CustomEvent('data-updated', {
-      detail: updatedData,
-      bubbles: true
-    }));
-  }
-
   render() {
     if (!this.data.widgets.length) {
       return html`
@@ -382,16 +478,34 @@ export class Dashboard extends LitElement {
 
     return html`
       <div class="dashboard">
-        ${columnArrays.map((columnWidgets, index) => html`
-          <div class="column" data-column=${index + 1}>
-            ${columnWidgets.map(widget => this.renderWidget(widget))}
-            ${columnWidgets.length === 0 ? html`
-              <div class="drop-zone" 
-                   @dragover=${(e: DragEvent) => this.handleColumnDragOver(e, index + 1)}
-                   @dragleave=${this.handleColumnDragLeave}
-                   @drop=${(e: DragEvent) => this.handleColumnDrop(e, index + 1)}>
-              </div>
-            ` : ''}
+        ${columnArrays.map((columnWidgets, columnIndex) => html`
+          <div class="column" data-column=${columnIndex + 1}>
+            ${columnWidgets.length === 0 
+              ? html`
+                <div class="drop-zone column-drop-zone" 
+                     @dragover=${(e: DragEvent) => this.handleEmptyColumnDragOver(e, columnIndex + 1)}
+                     @dragleave=${this.handleEmptyColumnDragLeave}
+                     @drop=${(e: DragEvent) => this.handleEmptyColumnDrop(e, columnIndex + 1)}>
+                </div>
+              ` 
+              : html`
+                <!-- Drop zone at the top of the column -->
+                <div class="drop-zone" 
+                     @dragover=${(e: DragEvent) => this.handleDropZoneDragOver(e, columnIndex + 1, 0)}
+                     @dragleave=${this.handleDropZoneDragLeave}
+                     @drop=${(e: DragEvent) => this.handleDropZoneDrop(e, columnIndex + 1, 0)}>
+                </div>
+                
+                ${columnWidgets.map((widget, widgetIndex) => html`
+                  ${this.renderWidget(widget)}
+                  <!-- Drop zone after each widget -->
+                  <div class="drop-zone" 
+                       @dragover=${(e: DragEvent) => this.handleDropZoneDragOver(e, columnIndex + 1, widgetIndex + 1)}
+                       @dragleave=${this.handleDropZoneDragLeave}
+                       @drop=${(e: DragEvent) => this.handleDropZoneDrop(e, columnIndex + 1, widgetIndex + 1)}>
+                  </div>
+                `)}
+              `}
           </div>
         `)}
       </div>
