@@ -27,6 +27,7 @@ export class Dashboard extends LitElement {
       flex-direction: column;
       gap: var(--fv-widget-gap);
       min-width: 0; /* Prevent flex item from overflowing */
+      transition: all 0.2s ease;
     }
 
     .widget {
@@ -98,17 +99,19 @@ export class Dashboard extends LitElement {
 
     .drop-zone {
       border-radius: var(--fv-border-radius);
-      transition: var(--fv-transition);
-      opacity: 0;
+      transition: all 0.2s ease;
       height: 0;
+      opacity: 0;
       overflow: hidden;
+      margin: 0;
+      border: 2px dashed transparent;
     }
 
-    .drop-zone.drag-active {
-      opacity: 1;
+    :host(.dragging) .drop-zone {
       height: 40px;
-      margin: 2px 0;
-      border: 2px dashed var(--fv-accent-primary);
+      opacity: 1;
+      margin: 8px 0;
+      border-color: var(--fv-accent-primary);
       background-color: rgba(0, 123, 255, 0.05);
       display: flex;
       align-items: center;
@@ -117,11 +120,33 @@ export class Dashboard extends LitElement {
       font-size: var(--fv-font-size-sm);
     }
 
-    .drop-zone.drag-active::after {
+    :host(.dragging) .drop-zone::after {
       content: "Drop widget here";
     }
 
-    .column.drag-over-empty {
+    .drop-zone.drag-active {
+      background-color: rgba(0, 123, 255, 0.15);
+      transform: scale(1.02);
+    }
+
+    /* Empty columns while dragging */
+    :host(.dragging) .column:empty {
+      min-height: 100px;
+      border: 2px dashed rgba(0, 123, 255, 0.3);
+      background-color: rgba(0, 123, 255, 0.02);
+      border-radius: var(--fv-border-radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fv-text-secondary);
+      font-size: var(--fv-font-size-sm);
+    }
+
+    :host(.dragging) .column:empty::after {
+      content: "Drop widget here";
+    }
+
+    :host(.dragging) .column.drag-over-empty {
       min-height: 200px;
       border: 2px dashed var(--fv-accent-primary);
       background-color: rgba(0, 123, 255, 0.05);
@@ -133,7 +158,7 @@ export class Dashboard extends LitElement {
       font-size: var(--fv-font-size-sm);
     }
 
-    .column.drag-over-empty::after {
+    :host(.dragging) .column.drag-over-empty::after {
       content: "Drop widget here";
     }
 
@@ -227,12 +252,16 @@ export class Dashboard extends LitElement {
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
     }
+    // Add dragging class to host for CSS styling
+    this.classList.add('dragging');
     this.requestUpdate();
   }
 
   private handleDragEnd = () => {
     this._draggedId = undefined;
     this._dragTargetId = undefined;
+    // Remove dragging class from host
+    this.classList.remove('dragging');
     this.requestUpdate();
   };
 
