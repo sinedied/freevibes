@@ -375,6 +375,7 @@ export class App extends LitElement {
       ${this.showSettings ? html`
         <fv-settings 
           .data=${this.data}
+          ?open=${this.showSettings}
           @settings-updated=${this.handleSettingsUpdate}
           @close=${this.closeSettings}>
         </fv-settings>

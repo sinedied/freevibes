@@ -284,19 +284,25 @@ export class Settings extends LitElement {
 
   private handleMainColorChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    if (target.type === 'text' && target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+    if (target.type === 'color') {
       this.mainColor = target.value;
-    } else if (target.type === 'color') {
-      this.mainColor = target.value;
+    } else if (target.type === 'text') {
+      const value = target.value.trim();
+      if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+        this.mainColor = value;
+      }
     }
   }
 
   private handleBackgroundColorChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    if (target.type === 'text' && target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+    if (target.type === 'color') {
       this.backgroundColor = target.value;
-    } else if (target.type === 'color') {
-      this.backgroundColor = target.value;
+    } else if (target.type === 'text') {
+      const value = target.value.trim();
+      if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+        this.backgroundColor = value;
+      }
     }
   }
 
