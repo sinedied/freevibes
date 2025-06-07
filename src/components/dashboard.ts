@@ -97,16 +97,17 @@ export class Dashboard extends LitElement {
     }
 
     .drop-zone {
-      min-height: 8px;
       border-radius: var(--fv-border-radius);
       transition: var(--fv-transition);
-      margin: 2px 0;
       opacity: 0;
+      height: 0;
+      overflow: hidden;
     }
 
     .drop-zone.drag-active {
       opacity: 1;
-      min-height: 40px;
+      height: 40px;
+      margin: 2px 0;
       border: 2px dashed var(--fv-accent-primary);
       background-color: rgba(0, 123, 255, 0.05);
       display: flex;
@@ -306,6 +307,8 @@ export class Dashboard extends LitElement {
       detail: updatedData,
       bubbles: true
     }));
+    
+    this.requestUpdate();
   }
 
   private handleEmptyColumnDragOver(e: DragEvent, _column: number) {
@@ -348,6 +351,8 @@ export class Dashboard extends LitElement {
       detail: updatedData,
       bubbles: true
     }));
+    
+    this.requestUpdate();
   }
 
   private handleResizeStart = (e: MouseEvent, widgetId: string) => {
