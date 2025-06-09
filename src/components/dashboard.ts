@@ -111,55 +111,37 @@ export class Dashboard extends LitElement {
       height: 40px;
       opacity: 1;
       margin: 8px 0;
-      border-color: var(--fv-accent-primary);
-      background-color: rgba(0, 123, 255, 0.05);
+      border-color: var(--fv-border);
+      background-color: var(--fv-bg-tertiary);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--fv-accent-primary);
-      font-size: var(--fv-font-size-sm);
-    }
-
-    :host(.dragging) .drop-zone::after {
-      content: "Drop widget here";
     }
 
     .drop-zone.drag-active {
-      background-color: rgba(0, 123, 255, 0.15);
+      background-color: var(--fv-bg-secondary);
       transform: scale(1.02);
     }
 
     /* Empty columns while dragging */
     :host(.dragging) .column:empty {
       min-height: 100px;
-      border: 2px dashed rgba(0, 123, 255, 0.3);
-      background-color: rgba(0, 123, 255, 0.02);
+      border: 2px dashed var(--fv-border);
+      background-color: var(--fv-bg-tertiary);
       border-radius: var(--fv-border-radius-lg);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--fv-text-secondary);
-      font-size: var(--fv-font-size-sm);
-    }
-
-    :host(.dragging) .column:empty::after {
-      content: "Drop widget here";
     }
 
     :host(.dragging) .column.drag-over-empty {
       min-height: 200px;
-      border: 2px dashed var(--fv-accent-primary);
-      background-color: rgba(0, 123, 255, 0.05);
+      border: 2px dashed var(--fv-border);
+      background-color: var(--fv-bg-secondary);
       border-radius: var(--fv-border-radius-lg);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--fv-accent-primary);
-      font-size: var(--fv-font-size-sm);
-    }
-
-    :host(.dragging) .column.drag-over-empty::after {
-      content: "Drop widget here";
     }
 
     .resize-handle {
@@ -337,7 +319,8 @@ export class Dashboard extends LitElement {
       bubbles: true
     }));
     
-    this.requestUpdate();
+    // Force immediate update after data change
+    setTimeout(() => this.requestUpdate(), 0);
   }
 
   private handleEmptyColumnDragOver(e: DragEvent, _column: number) {
@@ -381,7 +364,8 @@ export class Dashboard extends LitElement {
       bubbles: true
     }));
     
-    this.requestUpdate();
+    // Force immediate update after data change
+    setTimeout(() => this.requestUpdate(), 0);
   }
 
   private handleResizeStart = (e: MouseEvent, widgetId: string) => {
