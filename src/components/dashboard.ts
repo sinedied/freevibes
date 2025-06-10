@@ -119,7 +119,8 @@ export class Dashboard extends LitElement {
     }
 
     .drop-zone.drag-active {
-      background-color: var(--fv-bg-secondary);
+      border-color: var(--fv-accent-primary);
+      background-color: rgba(0, 123, 255, 0.15);
       transform: scale(1.02);
     }
 
@@ -320,7 +321,8 @@ export class Dashboard extends LitElement {
     }));
     
     // Force immediate update after data change
-    setTimeout(() => this.requestUpdate(), 0);
+    this.data = updatedData;
+    this.requestUpdate();
   }
 
   private handleEmptyColumnDragOver(e: DragEvent, _column: number) {
@@ -365,7 +367,8 @@ export class Dashboard extends LitElement {
     }));
     
     // Force immediate update after data change
-    setTimeout(() => this.requestUpdate(), 0);
+    this.data = updatedData;
+    this.requestUpdate();
   }
 
   private handleResizeStart = (e: MouseEvent, widgetId: string) => {
