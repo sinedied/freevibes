@@ -8,6 +8,10 @@ export class Settings extends LitElement {
   @property({ type: Object }) data!: DashboardData;
   @property({ type: Boolean }) open = false;
   @state() private columns = 3;
+  @state() private darkModeType: 'on' | 'off' | 'system' = 'off';
+  @state() private mainColor = '#007bff';
+  @state() private backgroundColor = '#f8f9fa';
+  @state() private fontSize = 16;
 
   static styles = css`
     :host {
@@ -122,11 +126,81 @@ export class Settings extends LitElement {
       font-weight: 500;
     }
 
+    .radio-group {
+      display: flex;
+      gap: var(--fv-spacing-md);
+      margin-bottom: var(--fv-spacing-xs);
+    }
+
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-xs);
+    }
+
+    .radio-item input[type="radio"] {
+      margin: 0;
+    }
+
+    .radio-item label {
+      margin: 0;
+      font-weight: normal;
+      cursor: pointer;
+      font-size: var(--fv-font-size-sm);
+    }
+
+    .color-input-group {
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-sm);
+      margin-bottom: var(--fv-spacing-xs);
+    }
+
+    .color-input {
+      width: 60px;
+      height: 40px;
+      border: 1px solid var(--fv-border);
+      border-radius: var(--fv-border-radius);
+      cursor: pointer;
+      background: none;
+      padding: 2px;
+    }
+
+    .color-input::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .color-input::-webkit-color-swatch {
+      border: none;
+      border-radius: 4px;
+    }
+
+    .color-hex {
+      font-family: monospace;
+      font-size: var(--fv-font-size-sm);
+      color: var(--fv-text-secondary);
+      background: var(--fv-bg-tertiary);
+      padding: var(--fv-spacing-xs) var(--fv-spacing-sm);
+      border-radius: var(--fv-border-radius);
+      border: 1px solid var(--fv-border);
+      width: 100px;
+    }
+
     .actions {
       padding: var(--fv-spacing-lg);
       border-top: 1px solid var(--fv-border);
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .actions-left {
+      display: flex;
+      gap: var(--fv-spacing-sm);
+    }
+
+    .actions-right {
+      display: flex;
       gap: var(--fv-spacing-sm);
     }
 
@@ -185,12 +259,20 @@ export class Settings extends LitElement {
     super.connectedCallback();
     if (this.data) {
       this.columns = this.data.settings.columns;
+      this.darkModeType = this.data.settings.darkModeType;
+      this.mainColor = this.data.settings.mainColor;
+      this.backgroundColor = this.data.settings.backgroundColor;
+      this.fontSize = this.data.settings.fontSize;
     }
   }
 
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has('data') && this.data) {
       this.columns = this.data.settings.columns;
+      this.darkModeType = this.data.settings.darkModeType;
+      this.mainColor = this.data.settings.mainColor;
+      this.backgroundColor = this.data.settings.backgroundColor;
+      this.fontSize = this.data.settings.fontSize;
     }
   }
 
@@ -205,12 +287,51 @@ export class Settings extends LitElement {
     this.columns = parseInt(target.value);
   }
 
+  private handleDarkModeChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.darkModeType = target.value as 'on' | 'off' | 'system';
+  }
+
+  private handleMainColorChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.type === 'color') {
+      this.mainColor = target.value;
+    } else if (target.type === 'text') {
+      const value = target.value.trim();
+      if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+        this.mainColor = value;
+      }
+    }
+  }
+
+  private handleBackgroundColorChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.type === 'color') {
+      this.backgroundColor = target.value;
+    } else if (target.type === 'text') {
+      const value = target.value.trim();
+      if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+        this.backgroundColor = value;
+      }
+    }
+  }
+
+  private handleFontSizeChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.fontSize = parseInt(target.value);
+  }
+
   private save() {
     const updatedData = {
       ...this.data,
       settings: {
         ...this.data.settings,
-        columns: this.columns
+        columns: this.columns,
+        darkModeType: this.darkModeType,
+        darkMode: this.darkModeType === 'on' || (this.darkModeType === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches),
+        mainColor: this.mainColor,
+        backgroundColor: this.backgroundColor,
+        fontSize: this.fontSize
       }
     };
 
@@ -222,6 +343,40 @@ export class Settings extends LitElement {
     }));
 
     this.close();
+  }
+
+  private downloadConfig() {
+    const configData = {
+      ...this.data,
+      settings: {
+        ...this.data.settings,
+        columns: this.columns,
+        darkModeType: this.darkModeType,
+        darkMode: this.darkModeType === 'on' || (this.darkModeType === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches),
+        mainColor: this.mainColor,
+        backgroundColor: this.backgroundColor,
+        fontSize: this.fontSize
+      }
+    };
+
+    const jsonString = JSON.stringify(configData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'freevibes-config.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  private viewGist() {
+    const gistUrl = dataService.getGistUrl();
+    if (gistUrl) {
+      window.open(gistUrl, '_blank');
+    }
   }
 
   private close() {
@@ -254,6 +409,127 @@ export class Settings extends LitElement {
               <span class="range-value">${this.columns} column${this.columns !== 1 ? 's' : ''}</span>
             </div>
 
+            <div class="setting-group">
+              <label class="setting-label">Dark Mode</label>
+              <div class="setting-description">
+                Choose your preferred color scheme
+              </div>
+              <div class="radio-group">
+                <div class="radio-item">
+                  <input 
+                    type="radio" 
+                    id="dark-off" 
+                    name="darkMode" 
+                    value="off" 
+                    .checked=${this.darkModeType === 'off'}
+                    @change=${this.handleDarkModeChange}
+                  />
+                  <label for="dark-off">Light</label>
+                </div>
+                <div class="radio-item">
+                  <input 
+                    type="radio" 
+                    id="dark-on" 
+                    name="darkMode" 
+                    value="on" 
+                    .checked=${this.darkModeType === 'on'}
+                    @change=${this.handleDarkModeChange}
+                  />
+                  <label for="dark-on">Dark</label>
+                </div>
+                <div class="radio-item">
+                  <input 
+                    type="radio" 
+                    id="dark-system" 
+                    name="darkMode" 
+                    value="system" 
+                    .checked=${this.darkModeType === 'system'}
+                    @change=${this.handleDarkModeChange}
+                  />
+                  <label for="dark-system">System</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Accent Color</label>
+              <div class="setting-description">
+                Choose the main accent color for buttons and links
+              </div>
+              <div class="color-input-group">
+                <input
+                  type="color"
+                  class="color-input"
+                  .value=${this.mainColor}
+                  @input=${this.handleMainColorChange}
+                />
+                <input
+                  type="text"
+                  class="color-hex"
+                  .value=${this.mainColor}
+                  @input=${this.handleMainColorChange}
+                  pattern="#[0-9A-Fa-f]{6}"
+                  placeholder="#007bff"
+                />
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Background Color</label>
+              <div class="setting-description">
+                Choose the background color (only applies in light mode)
+              </div>
+              <div class="color-input-group">
+                <input
+                  type="color"
+                  class="color-input"
+                  .value=${this.backgroundColor}
+                  @input=${this.handleBackgroundColorChange}
+                />
+                <input
+                  type="text"
+                  class="color-hex"
+                  .value=${this.backgroundColor}
+                  @input=${this.handleBackgroundColorChange}
+                  pattern="#[0-9A-Fa-f]{6}"
+                  placeholder="#f8f9fa"
+                />
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Font Size</label>
+              <div class="setting-description">
+                Adjust the base font size for better readability
+              </div>
+              <input
+                type="range"
+                class="range-input"
+                min="12"
+                max="24"
+                .value=${this.fontSize.toString()}
+                @input=${this.handleFontSizeChange}
+              />
+              <span class="range-value">${this.fontSize}px</span>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Configuration</label>
+              <div class="setting-description">
+                Export or view your dashboard configuration
+              </div>
+              <div class="actions-left">
+                <button class="btn btn-secondary" @click=${this.downloadConfig}>
+                  📥 Download Config
+                </button>
+                ${dataService.isGistEnabled() ? html`
+                  <button class="btn btn-secondary" @click=${this.viewGist}>
+                    🔗 View Gist
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
             <div class="info">
               <h3 class="info-title">💡 About FreeVibes</h3>
               <p class="info-text">
@@ -265,12 +541,14 @@ export class Settings extends LitElement {
           </div>
 
           <div class="actions">
-            <button class="btn btn-secondary" @click=${this.close}>
-              Cancel
-            </button>
-            <button class="btn btn-primary" @click=${this.save}>
-              Save Changes
-            </button>
+            <div class="actions-right">
+              <button class="btn btn-secondary" @click=${this.close}>
+                Cancel
+              </button>
+              <button class="btn btn-primary" @click=${this.save}>
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       </div>

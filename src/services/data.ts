@@ -2,6 +2,10 @@ export interface DashboardData {
   settings: {
     columns: number;
     darkMode: boolean;
+    darkModeType: 'on' | 'off' | 'system';
+    mainColor: string;
+    backgroundColor: string;
+    fontSize: number;
   };
   widgets: Widget[];
 }
@@ -64,6 +68,17 @@ class DataService {
     });
   }
 
+  private migrateSettingsData(settings: any): DashboardData['settings'] {
+    return {
+      columns: settings.columns || 3,
+      darkMode: settings.darkMode || false,
+      darkModeType: settings.darkModeType || (settings.darkMode ? 'on' : 'off'),
+      mainColor: settings.mainColor || '#007bff',
+      backgroundColor: settings.backgroundColor || '#f8f9fa', 
+      fontSize: settings.fontSize || 16
+    };
+  }
+
   async loginWithGithubToken(githubToken: string) {
     await githubGistService.login(githubToken);
     this.isUsingGistStorage = true;
@@ -87,6 +102,7 @@ class DataService {
         if (rawData) {
           const migratedData = {
             ...rawData,
+            settings: this.migrateSettingsData(rawData.settings),
             widgets: this.migrateWidgetData(rawData.widgets)
           };
           this.dashboardData = migratedData;
@@ -105,6 +121,7 @@ class DataService {
         if (rawData) {
           const migratedData = {
             ...rawData,
+            settings: this.migrateSettingsData(rawData.settings),
             widgets: this.migrateWidgetData(rawData.widgets)
           };
           this.dashboardData = migratedData;
@@ -121,6 +138,7 @@ class DataService {
       if (rawData) {
         const migratedData = {
           ...rawData,
+          settings: this.migrateSettingsData(rawData.settings),
           widgets: this.migrateWidgetData(rawData.widgets)
         };
         this.dashboardData = migratedData;
@@ -132,7 +150,14 @@ class DataService {
     
     // Fallback default data
     const defaultData = {
-      settings: { columns: 3, darkMode: false },
+      settings: { 
+        columns: 3, 
+        darkMode: false,
+        darkModeType: 'off' as const,
+        mainColor: '#007bff',
+        backgroundColor: '#f8f9fa',
+        fontSize: 16
+      },
       widgets: []
     };
     this.dashboardData = defaultData;
@@ -176,6 +201,10 @@ class DataService {
 
   isGistEnabled() {
     return this.isUsingGistStorage;
+  }
+
+  getGistUrl(): string | undefined {
+    return githubGistService.getGistUrl();
   }
 }
 

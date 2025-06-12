@@ -121,9 +121,15 @@ async function apiCall(path: string, method = 'GET', body?: any) {
   return res.json();
 }
 
+function getGistUrl(): string | undefined {
+  if (!state.gistId) return undefined;
+  return `https://gist.github.com/${state.gistId}`;
+}
+
 export const githubGistService = {
   login,
   logout,
   loadData,
-  saveData
+  saveData,
+  getGistUrl
 };
