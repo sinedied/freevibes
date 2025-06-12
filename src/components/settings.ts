@@ -513,6 +513,23 @@ export class Settings extends LitElement {
               <span class="range-value">${this.fontSize}px</span>
             </div>
 
+            <div class="setting-group">
+              <label class="setting-label">Configuration</label>
+              <div class="setting-description">
+                Export or view your dashboard configuration
+              </div>
+              <div class="actions-left">
+                <button class="btn btn-secondary" @click=${this.downloadConfig}>
+                  📥 Download Config
+                </button>
+                ${dataService.isGistEnabled() ? html`
+                  <button class="btn btn-secondary" @click=${this.viewGist}>
+                    🔗 View Gist
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
             <div class="info">
               <h3 class="info-title">💡 About FreeVibes</h3>
               <p class="info-text">
@@ -524,16 +541,6 @@ export class Settings extends LitElement {
           </div>
 
           <div class="actions">
-            <div class="actions-left">
-              <button class="btn btn-secondary" @click=${this.downloadConfig}>
-                📥 Download Config
-              </button>
-              ${dataService.isGistEnabled() ? html`
-                <button class="btn btn-secondary" @click=${this.viewGist}>
-                  🔗 View Gist
-                </button>
-              ` : ''}
-            </div>
             <div class="actions-right">
               <button class="btn btn-secondary" @click=${this.close}>
                 Cancel
