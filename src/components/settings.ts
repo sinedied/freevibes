@@ -190,7 +190,17 @@ export class Settings extends LitElement {
       padding: var(--fv-spacing-lg);
       border-top: 1px solid var(--fv-border);
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .actions-left {
+      display: flex;
+      gap: var(--fv-spacing-sm);
+    }
+
+    .actions-right {
+      display: flex;
       gap: var(--fv-spacing-sm);
     }
 
@@ -333,6 +343,40 @@ export class Settings extends LitElement {
     }));
 
     this.close();
+  }
+
+  private downloadConfig() {
+    const configData = {
+      ...this.data,
+      settings: {
+        ...this.data.settings,
+        columns: this.columns,
+        darkModeType: this.darkModeType,
+        darkMode: this.darkModeType === 'on' || (this.darkModeType === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches),
+        mainColor: this.mainColor,
+        backgroundColor: this.backgroundColor,
+        fontSize: this.fontSize
+      }
+    };
+
+    const jsonString = JSON.stringify(configData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'freevibes-config.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  private viewGist() {
+    const gistUrl = dataService.getGistUrl();
+    if (gistUrl) {
+      window.open(gistUrl, '_blank');
+    }
   }
 
   private close() {
@@ -480,12 +524,24 @@ export class Settings extends LitElement {
           </div>
 
           <div class="actions">
-            <button class="btn btn-secondary" @click=${this.close}>
-              Cancel
-            </button>
-            <button class="btn btn-primary" @click=${this.save}>
-              Save Changes
-            </button>
+            <div class="actions-left">
+              <button class="btn btn-secondary" @click=${this.downloadConfig}>
+                📥 Download Config
+              </button>
+              ${dataService.isGistEnabled() ? html`
+                <button class="btn btn-secondary" @click=${this.viewGist}>
+                  🔗 View Gist
+                </button>
+              ` : ''}
+            </div>
+            <div class="actions-right">
+              <button class="btn btn-secondary" @click=${this.close}>
+                Cancel
+              </button>
+              <button class="btn btn-primary" @click=${this.save}>
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       </div>

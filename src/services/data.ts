@@ -202,6 +202,10 @@ class DataService {
   isGistEnabled() {
     return this.isUsingGistStorage;
   }
+
+  getGistUrl(): string | undefined {
+    return githubGistService.getGistUrl();
+  }
 }
 
 export const dataService = new DataService();
