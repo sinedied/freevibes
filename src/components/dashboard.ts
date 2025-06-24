@@ -111,16 +111,16 @@ export class Dashboard extends LitElement {
       height: 40px;
       opacity: 1;
       margin: 8px 0;
-      border-color: var(--fv-border);
-      background-color: var(--fv-bg-tertiary);
       display: flex;
       align-items: center;
       justify-content: center;
+      border-color: var(--fv-border);
+      background-color: var(--fv-bg-tertiary);
     }
 
     :host(.dragging) .drop-zone.drag-active {
-      border-color: var(--fv-accent-primary) !important;
-      background-color: rgba(0, 123, 255, 0.25) !important;
+      border-color: var(--fv-accent-primary);
+      background-color: rgba(0, 123, 255, 0.25);
       transform: scale(1.02);
       color: var(--fv-accent-primary);
       font-weight: 600;
@@ -171,8 +171,8 @@ export class Dashboard extends LitElement {
       pointer-events: auto;
     }
 
-    .resize-handle:hover {
-      opacity: 1 !important;
+    .widget:hover .resize-handle:hover {
+      opacity: 1;
       background: linear-gradient(-45deg, transparent 0%, transparent 30%, var(--fv-accent-primary) 30%, var(--fv-accent-primary) 40%, transparent 40%, transparent 60%, var(--fv-accent-primary) 60%, var(--fv-accent-primary) 70%, transparent 70%);
     }
 
