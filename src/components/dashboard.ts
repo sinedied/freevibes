@@ -302,27 +302,31 @@ export class Dashboard extends LitElement {
     const target = e.currentTarget as HTMLElement;
     target.classList.remove('drag-active');
 
-    const widgets = [...this.data.widgets];
-    const fromWidget = widgets.find(w => w.id === fromId);
-    
+    const fromWidget = this.data.widgets.find(w => w.id === fromId);
     if (!fromWidget) return;
 
-    // Store the original column before modifying the widget
+    // Create a completely new widgets array with immutable updates
+    const updatedWidgets = this.data.widgets.map(w => ({
+      ...w,
+      position: { ...w.position }
+    }));
+
+    const updatedFromWidget = updatedWidgets.find(w => w.id === fromId)!;
     const originalColumn = fromWidget.position.column;
 
-    // Update the dragged widget's position
-    fromWidget.position.column = column;
+    // Update the dragged widget's column
+    updatedFromWidget.position.column = column;
 
     // Get widgets in the target column (excluding the dragged widget)
-    const columnWidgets = widgets
+    const columnWidgets = updatedWidgets
       .filter(w => w.position.column === column && w.id !== fromId)
       .sort((a, b) => a.position.order - b.position.order);
 
     // Insert the widget at the specified position
     if (position <= columnWidgets.length) {
-      columnWidgets.splice(position, 0, fromWidget);
+      columnWidgets.splice(position, 0, updatedFromWidget);
     } else {
-      columnWidgets.push(fromWidget);
+      columnWidgets.push(updatedFromWidget);
     }
 
     // Reorder all widgets in the target column
@@ -332,7 +336,7 @@ export class Dashboard extends LitElement {
 
     // If the widget moved to a different column, reorder the original column too
     if (originalColumn !== column) {
-      const originalColumnWidgets = widgets
+      const originalColumnWidgets = updatedWidgets
         .filter(w => w.position.column === originalColumn && w.id !== fromId)
         .sort((a, b) => a.position.order - b.position.order);
       
@@ -341,7 +345,7 @@ export class Dashboard extends LitElement {
       });
     }
 
-    const updatedData = { ...this.data, widgets };
+    const updatedData = { ...this.data, widgets: updatedWidgets };
     this._draggedId = undefined;
     this._dragTargetId = undefined;
     
@@ -349,6 +353,9 @@ export class Dashboard extends LitElement {
       detail: updatedData,
       bubbles: true
     }));
+
+    // Force an immediate update
+    this.requestUpdate();
   }
 
   private handleEmptyColumnDragOver(e: DragEvent, _column: number) {
@@ -374,16 +381,22 @@ export class Dashboard extends LitElement {
     const target = e.currentTarget as HTMLElement;
     target.classList.remove('drag-over-empty');
 
-    const widgets = [...this.data.widgets];
-    const fromWidget = widgets.find(w => w.id === fromId);
-    
+    const fromWidget = this.data.widgets.find(w => w.id === fromId);
     if (!fromWidget) return;
 
-    // Move widget to the empty column
-    fromWidget.position.column = column;
-    fromWidget.position.order = 1000; // First in the column
+    // Create a completely new widgets array with immutable updates
+    const updatedWidgets = this.data.widgets.map(w => ({
+      ...w,
+      position: { ...w.position }
+    }));
 
-    const updatedData = { ...this.data, widgets };
+    const updatedFromWidget = updatedWidgets.find(w => w.id === fromId)!;
+
+    // Move widget to the empty column
+    updatedFromWidget.position.column = column;
+    updatedFromWidget.position.order = 1000; // First in the column
+
+    const updatedData = { ...this.data, widgets: updatedWidgets };
     this._draggedId = undefined;
     this._dragTargetId = undefined;
     
@@ -391,6 +404,9 @@ export class Dashboard extends LitElement {
       detail: updatedData,
       bubbles: true
     }));
+
+    // Force an immediate update
+    this.requestUpdate();
   }
 
   private handleResizeStart = (e: MouseEvent, widgetId: string) => {
