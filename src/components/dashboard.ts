@@ -186,27 +186,9 @@ export class Dashboard extends LitElement {
     }
   `;
 
-  private shouldShowDropZone(column: number, position: number): boolean {
-    if (!this._draggedId) return true;
-
-    // Find the dragged widget
-    const draggedWidget = this.data.widgets.find(w => w.id === this._draggedId);
-    if (!draggedWidget) return true;
-
-    // If the dragged widget is not in this column, show all drop zones
-    if (draggedWidget.position.column !== column) return true;
-
-    // Find the current position of the dragged widget in this column
-    const allColumnWidgets = this.data.widgets
-      .filter(w => w.position.column === column)
-      .sort((a, b) => a.position.order - b.position.order);
-    
-    const draggedWidgetIndex = allColumnWidgets.findIndex(w => w.id === this._draggedId);
-
-    // Hide drop zones that would result in the same position:
-    // - Before the dragged widget (position === draggedWidgetIndex)
-    // - After the dragged widget (position === draggedWidgetIndex + 1)
-    return position !== draggedWidgetIndex && position !== draggedWidgetIndex + 1;
+  private shouldShowDropZone(_column: number, _position: number): boolean {
+    // Always show all drop zones for now - this will help with debugging position issues
+    return true;
   }
 
   private handleWidgetUpdate(event: CustomEvent) {
@@ -304,6 +286,24 @@ export class Dashboard extends LitElement {
 
     const fromWidget = this.data.widgets.find(w => w.id === fromId);
     if (!fromWidget) return;
+
+    // Check if this is a no-op move within the same column
+    if (fromWidget.position.column === column) {
+      const allColumnWidgets = this.data.widgets
+        .filter(w => w.position.column === column)
+        .sort((a, b) => a.position.order - b.position.order);
+      
+      const draggedWidgetIndex = allColumnWidgets.findIndex(w => w.id === fromId);
+      
+      // Prevent moves that would result in the same position
+      if (position === draggedWidgetIndex || position === draggedWidgetIndex + 1) {
+        console.log('No-op move detected, ignoring');
+        this._draggedId = undefined;
+        this._dragTargetId = undefined;
+        this.requestUpdate();
+        return;
+      }
+    }
 
     // Create a completely new widgets array with immutable updates
     const updatedWidgets = this.data.widgets.map(w => ({
