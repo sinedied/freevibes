@@ -118,15 +118,15 @@ export class Dashboard extends LitElement {
       justify-content: center;
     }
 
-    .drop-zone.drag-active {
-      border-color: var(--fv-accent-primary);
-      background-color: rgba(0, 123, 255, 0.25);
+    :host(.dragging) .drop-zone.drag-active {
+      border-color: var(--fv-accent-primary) !important;
+      background-color: rgba(0, 123, 255, 0.25) !important;
       transform: scale(1.02);
       color: var(--fv-accent-primary);
       font-weight: 600;
     }
 
-    .drop-zone.drag-active::after {
+    :host(.dragging) .drop-zone.drag-active::after {
       content: "Drop widget here";
       font-size: var(--fv-font-size-sm);
     }
