@@ -186,6 +186,29 @@ export class Dashboard extends LitElement {
     }
   `;
 
+  private shouldShowDropZone(column: number, position: number): boolean {
+    if (!this._draggedId) return true;
+
+    // Find the dragged widget
+    const draggedWidget = this.data.widgets.find(w => w.id === this._draggedId);
+    if (!draggedWidget) return true;
+
+    // If the dragged widget is not in this column, show all drop zones
+    if (draggedWidget.position.column !== column) return true;
+
+    // Find the current position of the dragged widget in this column
+    const allColumnWidgets = this.data.widgets
+      .filter(w => w.position.column === column)
+      .sort((a, b) => a.position.order - b.position.order);
+    
+    const draggedWidgetIndex = allColumnWidgets.findIndex(w => w.id === this._draggedId);
+
+    // Hide drop zones that would result in the same position:
+    // - Before the dragged widget (position === draggedWidgetIndex)
+    // - After the dragged widget (position === draggedWidgetIndex + 1)
+    return position !== draggedWidgetIndex && position !== draggedWidgetIndex + 1;
+  }
+
   private handleWidgetUpdate(event: CustomEvent) {
     const updatedWidget = event.detail;
     const updatedData = {
@@ -326,10 +349,6 @@ export class Dashboard extends LitElement {
       detail: updatedData,
       bubbles: true
     }));
-    
-    // Force immediate update after data change
-    this.data = updatedData;
-    this.requestUpdate();
   }
 
   private handleEmptyColumnDragOver(e: DragEvent, _column: number) {
@@ -372,10 +391,6 @@ export class Dashboard extends LitElement {
       detail: updatedData,
       bubbles: true
     }));
-    
-    // Force immediate update after data change
-    this.data = updatedData;
-    this.requestUpdate();
   }
 
   private handleResizeStart = (e: MouseEvent, widgetId: string) => {
@@ -483,21 +498,25 @@ export class Dashboard extends LitElement {
                 </div>
               ` 
               : html`
-                <!-- Drop zone at the top of the column -->
-                <div class="drop-zone" 
-                     @dragover=${(e: DragEvent) => this.handleDropZoneDragOver(e, columnIndex + 1, 0)}
-                     @dragleave=${this.handleDropZoneDragLeave}
-                     @drop=${(e: DragEvent) => this.handleDropZoneDrop(e, columnIndex + 1, 0)}>
-                </div>
+                ${this.shouldShowDropZone(columnIndex + 1, 0) ? html`
+                  <!-- Drop zone at the top of the column -->
+                  <div class="drop-zone" 
+                       @dragover=${(e: DragEvent) => this.handleDropZoneDragOver(e, columnIndex + 1, 0)}
+                       @dragleave=${this.handleDropZoneDragLeave}
+                       @drop=${(e: DragEvent) => this.handleDropZoneDrop(e, columnIndex + 1, 0)}>
+                  </div>
+                ` : ''}
                 
                 ${columnWidgets.map((widget, widgetIndex) => html`
                   ${this.renderWidget(widget)}
-                  <!-- Drop zone after each widget -->
-                  <div class="drop-zone" 
-                       @dragover=${(e: DragEvent) => this.handleDropZoneDragOver(e, columnIndex + 1, widgetIndex + 1)}
-                       @dragleave=${this.handleDropZoneDragLeave}
-                       @drop=${(e: DragEvent) => this.handleDropZoneDrop(e, columnIndex + 1, widgetIndex + 1)}>
-                  </div>
+                  ${this.shouldShowDropZone(columnIndex + 1, widgetIndex + 1) ? html`
+                    <!-- Drop zone after each widget -->
+                    <div class="drop-zone" 
+                         @dragover=${(e: DragEvent) => this.handleDropZoneDragOver(e, columnIndex + 1, widgetIndex + 1)}
+                         @dragleave=${this.handleDropZoneDragLeave}
+                         @drop=${(e: DragEvent) => this.handleDropZoneDrop(e, columnIndex + 1, widgetIndex + 1)}>
+                    </div>
+                  ` : ''}
                 `)}
               `}
           </div>
