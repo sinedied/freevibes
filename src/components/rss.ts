@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { type RSSWidget, type RSSItem } from '../services/data.js';
 import { rssService } from '../services/rss.js';
+import rssIconUrl from '/rss.svg?url';
 
 @customElement('fv-rss')
 export class RSS extends LitElement {
@@ -291,12 +292,12 @@ export class RSS extends LitElement {
       <div class="header">
         <span class="header-content">
           <img
-            src="${this.favicon || 'data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'10\' fill=\'%23ff9800\'/%3E%3Cpath d=\'M6 15a1 1 0 110-2 1 1 0 010 2zm2.5-1a1 1 0 110-2c3.59 0 6.5-2.91 6.5-6.5a1 1 0 112 0c0 4.694-3.806 8.5-8.5 8.5z\' fill=\'white\'/%3E%3C/svg%3E'}"
+            src="${this.favicon || rssIconUrl}"
             alt="Favicon"
             class="favicon"
             @error=${(e: Event) => {
               const img = e.currentTarget as HTMLImageElement;
-              img.src = 'data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'10\' fill=\'%23ff9800\'/%3E%3Cpath d=\'M6 15a1 1 0 110-2 1 1 0 010 2zm2.5-1a1 1 0 110-2c3.59 0 6.5-2.91 6.5-6.5a1 1 0 112 0c0 4.694-3.806 8.5-8.5 8.5z\' fill=\'white\'/%3E%3C/svg%3E';
+              img.src = rssIconUrl;
             }}
           />
           <h2 class="title header-title" title="${this.feedTitle}">${this.feedTitle}</h2>
