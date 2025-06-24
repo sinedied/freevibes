@@ -27,6 +27,8 @@ Description: A web dashboard for RSS/Notes inspired by the old NetVibes.
   * clicking on an item opens it in a new browser tab.
 - `notes.ts`: Sticky notes widget component
   * simple text notes thaat can be edited when clicking on them. HTTP links are clickable and open in a new tab.
+- `settings.ts`: Settings component
+  * allows users to customize the dashboard
 
 ## Code structure
 - `src/`: Source code directory
