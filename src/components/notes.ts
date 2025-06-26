@@ -22,6 +22,12 @@ export class Notes extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .header:active {
+      cursor: grabbing;
     }
 
     .title {

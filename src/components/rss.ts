@@ -30,6 +30,12 @@ export class RSS extends LitElement {
       align-items: center;
       justify-content: space-between;
       background-color: var(--fv-bg-tertiary);
+      cursor: grab;
+      user-select: none;
+    }
+
+    .header:active {
+      cursor: grabbing;
     }
 
     .title {

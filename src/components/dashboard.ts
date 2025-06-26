@@ -27,6 +27,7 @@ export class Dashboard extends LitElement {
       flex-direction: column;
       gap: var(--fv-widget-gap);
       min-width: 0; /* Prevent flex item from overflowing */
+      min-height: 200px; /* Ensure columns have minimum height for dropping */
     }
 
     .widget {
@@ -34,10 +35,62 @@ export class Dashboard extends LitElement {
       border: 1px solid var(--fv-border);
       border-radius: var(--fv-border-radius-lg);
       box-shadow: 0 2px 8px var(--fv-shadow);
-      transition: var(--fv-transition);
+      transition: all 0.3s ease;
       overflow: hidden;
-      height: calc(var(--widget-height, 6) * 1.5em + 3rem); /* Height based on lines + padding */
+      height: calc(var(--widget-height, 6) * 1.5em + 3rem);
       min-height: var(--fv-widget-min-height);
+      position: relative;
+    }
+
+    .widget.dragging {
+      opacity: 0.5;
+      z-index: 1000;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .widget.drag-preview {
+      background-color: var(--fv-bg-tertiary);
+      border: 2px dashed var(--fv-accent-primary);
+      opacity: 0.7;
+    }
+
+    .drag-placeholder {
+      height: 3rem;
+      border: 2px dashed var(--fv-accent-primary);
+      border-radius: var(--fv-border-radius-lg);
+      background-color: var(--fv-bg-tertiary);
+      opacity: 0;
+      margin: calc(var(--fv-widget-gap) / 2) 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fv-accent-primary);
+      font-size: var(--fv-font-size-sm);
+      font-weight: 500;
+      transform: scaleY(0);
+      transform-origin: center;
+      animation: dropZoneAppear 0.2s ease-out forwards;
+    }
+
+    @keyframes dropZoneAppear {
+      0% {
+        opacity: 0;
+        transform: scaleY(0);
+        height: 0;
+      }
+      50% {
+        opacity: 0.6;
+        height: 3rem;
+      }
+      100% {
+        opacity: 0.8;
+        transform: scaleY(1);
+        height: 3rem;
+      }
+    }
+
+    .drag-placeholder::after {
+      content: "Drop here";
     }
 
     .empty-state {
@@ -75,37 +128,6 @@ export class Dashboard extends LitElement {
       }
     }
 
-    .widget {
-      cursor: grab;
-    }
-    .widget:active {
-      cursor: grabbing;
-      opacity: 0.85;
-    }
-
-    .drop-zone {
-      min-height: 2em;
-      border: 2px dashed transparent;
-      border-radius: var(--fv-border-radius);
-      transition: var(--fv-transition);
-      margin: var(--fv-spacing-xs) 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--fv-text-muted);
-      font-size: var(--fv-font-size-sm);
-    }
-
-    .drop-zone.drag-over {
-      border-color: var(--fv-accent-primary);
-      background-color: var(--fv-bg-tertiary);
-      color: var(--fv-accent-primary);
-    }
-
-    .drop-zone.drag-over::after {
-      content: "Drop widget here";
-    }
-
     .resize-handle {
       position: absolute;
       bottom: 0;
@@ -132,6 +154,19 @@ export class Dashboard extends LitElement {
       transition: none;
       box-shadow: 0 4px 12px var(--fv-shadow-hover);
     }
+
+    /* Drag handle styling */
+    .widget ::slotted(.header),
+    .widget fv-rss::part(header),
+    .widget fv-notes::part(header) {
+      cursor: grab;
+    }
+
+    .widget.dragging ::slotted(.header),
+    .widget.dragging fv-rss::part(header),
+    .widget.dragging fv-notes::part(header) {
+      cursor: grabbing;
+    }
   `;
 
   private handleWidgetUpdate(event: CustomEvent) {
@@ -149,91 +184,139 @@ export class Dashboard extends LitElement {
     }));
   }
 
+  // Drag and Drop State
+  private _draggedWidget: Widget | undefined = undefined;
+  private _dragPreview: { column: number; position: number } | undefined = undefined;
+  private _columns: Widget[][] = [];
 
-  private renderWidget(widget: Widget) {
-    const isDragging = this._draggedId === widget.id;
-    const isResizing = this._resizingId === widget.id;
-    return html`
-      <div
-        class="widget ${isResizing ? 'resizing' : ''}"
-        data-id=${widget.id}
-        draggable="true"
-        @dragstart=${(e: DragEvent) => this.handleDragStart(e, widget.id)}
-        @dragend=${this.handleDragEnd}
-        @dragover=${(e: DragEvent) => this.handleDragOver(e)}
-        @drop=${(e: DragEvent) => this.handleDrop(e, widget.id)}
-        style="--widget-height: ${widget.height || 6}; ${isDragging ? 'opacity:0.5;' : ''} position: relative;"
-      >
-        ${widget.type === 'rss'
-          ? html`<fv-rss .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-rss>`
-          : widget.type === 'note'
-            ? html`<fv-notes .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-notes>`
-            : html`Unknown widget type`}
-        <div class="resize-handle" @mousedown=${(e: MouseEvent) => this.handleResizeStart(e, widget.id)}></div>
-      </div>
-    `;
+  private initializeDragHandlers() {
+    // This method sets up the drag functionality after render
+    this.updateComplete.then(() => {
+      const widgets = this.shadowRoot?.querySelectorAll('.widget');
+      widgets?.forEach(widgetEl => {
+        // Find the header element within the widget's component
+        const rssComponent = widgetEl.querySelector('fv-rss');
+        const notesComponent = widgetEl.querySelector('fv-notes');
+        
+        let headerEl: Element | null = null;
+        if (rssComponent) {
+          headerEl = rssComponent.shadowRoot?.querySelector('.header') || null;
+        } else if (notesComponent) {
+          headerEl = notesComponent.shadowRoot?.querySelector('.header') || null;
+        }
+
+        if (headerEl) {
+          headerEl.setAttribute('draggable', 'true');
+          headerEl.addEventListener('dragstart', (e) => {
+            const widgetId = widgetEl.getAttribute('data-id');
+            if (widgetId) {
+              this.handleDragStart(e as DragEvent, widgetId);
+            }
+          });
+        }
+      });
+    });
   }
 
-  private _draggedId: string | undefined = undefined;
-  private _resizingId: string | undefined = undefined;
-  private _resizeStartY: number = 0;
-  private _resizeStartHeight: number = 0;
+  private handleDragStart(e: DragEvent, widgetId: string) {
+    const widget = this.data.widgets.find(w => w.id === widgetId);
+    if (!widget) return;
 
-  private handleDragStart(e: DragEvent, id: string) {
-    this._draggedId = id;
-    e.dataTransfer?.setData('text/plain', id);
+    this._draggedWidget = widget;
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', widgetId);
     }
+
+    // Add dragging class for visual feedback
+    this.requestUpdate();
   }
 
-  private handleDragOver(e: DragEvent) {
+  private handleDragOver(e: DragEvent, columnIndex: number, position?: number) {
     e.preventDefault();
+    if (!this._draggedWidget) return;
+
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'move';
     }
+
+    // Calculate position if not provided
+    if (position === undefined) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const widgets = this._columns[columnIndex] || [];
+      
+      // Find the position based on mouse Y position
+      let insertPosition = widgets.length;
+      
+      for (let i = 0; i < widgets.length; i++) {
+        const widgetEl = this.shadowRoot?.querySelector(`[data-id="${widgets[i].id}"]`);
+        if (widgetEl) {
+          const widgetRect = widgetEl.getBoundingClientRect();
+          const widgetY = widgetRect.top - rect.top + widgetRect.height / 2;
+          
+          if (y < widgetY) {
+            insertPosition = i;
+            break;
+          }
+        }
+      }
+      
+      position = insertPosition;
+    }
+
+    // Update preview if position changed
+    const newPreview = { column: columnIndex, position };
+    if (!this._dragPreview || 
+        this._dragPreview.column !== newPreview.column || 
+        this._dragPreview.position !== newPreview.position) {
+      this._dragPreview = newPreview;
+      this.requestUpdate();
+    }
   }
 
-  private handleDrop(e: DragEvent, targetId: string) {
+  private handleDrop(e: DragEvent) {
     e.preventDefault();
-    const fromId = this._draggedId;
-    if (!fromId || fromId === targetId) return;
-
-    const widgets = [...this.data.widgets];
-    const fromWidget = widgets.find(w => w.id === fromId);
-    const targetWidget = widgets.find(w => w.id === targetId);
     
-    if (!fromWidget || !targetWidget) return;
+    if (!this._draggedWidget || !this._dragPreview) return;
 
-    // If dropping on the same widget, do nothing
-    if (fromWidget.id === targetWidget.id) return;
-
-    // Get widgets in the target column
-    const targetColumn = targetWidget.position.column;
-
-    // Remove the dragged widget from its current position
-    const fromIndex = widgets.findIndex(w => w.id === fromId);
-    widgets.splice(fromIndex, 1);
-
+    const { column: targetColumn, position: targetPosition } = this._dragPreview;
+    
+    // Create a new widgets array
+    const widgets = this.data.widgets.filter(w => w.id !== this._draggedWidget!.id);
+    
     // Update the dragged widget's position
-    fromWidget.position.column = targetColumn;
-    fromWidget.position.order = targetWidget.position.order;
+    const updatedWidget = {
+      ...this._draggedWidget,
+      position: {
+        column: targetColumn + 1, // Convert to 1-based
+        order: (targetPosition + 1) * 1000 // Give some spacing for future insertions
+      }
+    };
 
     // Insert the widget at the target position
-    const updatedIndex = widgets.findIndex(w => w.id === targetId);
-    widgets.splice(updatedIndex, 0, fromWidget);
-
-    // Reorder widgets in the target column
-    const updatedColumnWidgets = widgets
-      .filter(w => w.position.column === targetColumn)
-      .sort((a, b) => widgets.indexOf(a) - widgets.indexOf(b));
+    const columnWidgets = widgets.filter(w => w.position.column === targetColumn + 1);
+    const beforePosition = columnWidgets.slice(0, targetPosition);
+    const afterPosition = columnWidgets.slice(targetPosition);
     
-    updatedColumnWidgets.forEach((widget, index) => {
+    // Rebuild the widgets array with proper ordering
+    const otherColumnWidgets = widgets.filter(w => w.position.column !== targetColumn + 1);
+    const newColumnWidgets = [...beforePosition, updatedWidget, ...afterPosition];
+    
+    // Update order values for the target column
+    newColumnWidgets.forEach((widget, index) => {
       widget.position.order = (index + 1) * 1000;
     });
 
-    const updatedData = { ...this.data, widgets };
-    this._draggedId = undefined;
+    const updatedData = {
+      ...this.data,
+      widgets: [...otherColumnWidgets, ...newColumnWidgets]
+    };
+
+    // Clean up drag state
+    this._draggedWidget = undefined;
+    this._dragPreview = undefined;
+
     this.dispatchEvent(new CustomEvent('data-updated', {
       detail: updatedData,
       bubbles: true
@@ -241,9 +324,24 @@ export class Dashboard extends LitElement {
   }
 
   private handleDragEnd = () => {
-    this._draggedId = undefined;
+    this._draggedWidget = undefined;
+    this._dragPreview = undefined;
     this.requestUpdate();
   };
+
+  private renderDragPlaceholder(widget: Widget) {
+    return html`
+      <div 
+        class="drag-placeholder" 
+        style="--placeholder-height: ${widget.height || 6}">
+      </div>
+    `;
+  }
+
+  // Resize functionality
+  private _resizingId: string | undefined = undefined;
+  private _resizeStartY: number = 0;
+  private _resizeStartHeight: number = 0;
 
   private handleResizeStart = (e: MouseEvent, widgetId: string) => {
     e.preventDefault();
@@ -312,47 +410,43 @@ export class Dashboard extends LitElement {
     this.requestUpdate();
   };
 
-  private handleColumnDragOver(e: DragEvent, _column: number) {
-    e.preventDefault();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'move';
-    }
-    // Add visual feedback
-    const target = e.currentTarget as HTMLElement;
-    target.classList.add('drag-over');
+  private renderWidget(widget: Widget) {
+    const isDragging = this._draggedWidget?.id === widget.id;
+    const isResizing = this._resizingId === widget.id;
+    
+    return html`
+      <div
+        class="widget ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}"
+        data-id=${widget.id}
+        @dragend=${this.handleDragEnd}
+        style="--widget-height: ${widget.height || 6}; position: relative;"
+      >
+        ${widget.type === 'rss'
+          ? html`<fv-rss .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-rss>`
+          : widget.type === 'note'
+            ? html`<fv-notes .widget=${widget as any} @widget-updated=${this.handleWidgetUpdate}></fv-notes>`
+            : html`Unknown widget type`}
+        <div class="resize-handle" @mousedown=${(e: MouseEvent) => this.handleResizeStart(e, widget.id)}></div>
+      </div>
+    `;
   }
 
-  private handleColumnDragLeave(e: DragEvent) {
-    // Remove visual feedback when dragging leaves
-    const target = e.currentTarget as HTMLElement;
-    target.classList.remove('drag-over');
-  }
-
-  private handleColumnDrop(e: DragEvent, column: number) {
-    e.preventDefault();
-    const fromId = this._draggedId;
-    if (!fromId) return;
-
-    const widgets = [...this.data.widgets];
-    const fromWidget = widgets.find(w => w.id === fromId);
+  protected updated() {
+    // Initialize drag handlers after the component updates
+    this.initializeDragHandlers();
     
-    if (!fromWidget) return;
-
-    // Move widget to the empty column
-    fromWidget.position.column = column;
-    fromWidget.position.order = 1000; // First in the column
-
-    const updatedData = { ...this.data, widgets };
-    this._draggedId = undefined;
+    // Organize widgets by column for easier access
+    const columns = this.data.settings.columns;
+    this._columns = Array.from({ length: columns }, () => []);
     
-    // Remove visual feedback
-    const target = e.currentTarget as HTMLElement;
-    target.classList.remove('drag-over');
-    
-    this.dispatchEvent(new CustomEvent('data-updated', {
-      detail: updatedData,
-      bubbles: true
-    }));
+    this.data.widgets.forEach(widget => {
+      const columnIndex = Math.max(0, Math.min(widget.position.column - 1, columns - 1));
+      this._columns[columnIndex].push(widget);
+    });
+
+    this._columns.forEach(column => {
+      column.sort((a, b) => a.position.order - b.position.order);
+    });
   }
 
   render() {
@@ -382,16 +476,34 @@ export class Dashboard extends LitElement {
 
     return html`
       <div class="dashboard">
-        ${columnArrays.map((columnWidgets, index) => html`
-          <div class="column" data-column=${index + 1}>
-            ${columnWidgets.map(widget => this.renderWidget(widget))}
-            ${columnWidgets.length === 0 ? html`
-              <div class="drop-zone" 
-                   @dragover=${(e: DragEvent) => this.handleColumnDragOver(e, index + 1)}
-                   @dragleave=${this.handleColumnDragLeave}
-                   @drop=${(e: DragEvent) => this.handleColumnDrop(e, index + 1)}>
-              </div>
-            ` : ''}
+        ${columnArrays.map((columnWidgets, columnIndex) => html`
+          <div 
+            class="column" 
+            data-column=${columnIndex + 1}
+            @dragover=${(e: DragEvent) => this.handleDragOver(e, columnIndex)}
+            @drop=${this.handleDrop}
+          >
+            ${columnWidgets.map((widget, widgetIndex) => {
+              // Show placeholder if this is where the dragged widget would be inserted
+              const showPlaceholderBefore = this._dragPreview?.column === columnIndex && 
+                                         this._dragPreview?.position === widgetIndex &&
+                                         this._draggedWidget?.id !== widget.id;
+              
+              return html`
+                ${showPlaceholderBefore ? this.renderDragPlaceholder(this._draggedWidget!) : ''}
+                ${this.renderWidget(widget)}
+              `;
+            })}
+            ${/* Show placeholder at end of column if needed */ ''}
+            ${this._dragPreview?.column === columnIndex && 
+              this._dragPreview?.position === columnWidgets.length &&
+              !columnWidgets.some(w => w.id === this._draggedWidget?.id)
+                ? this.renderDragPlaceholder(this._draggedWidget!) 
+                : ''}
+            ${/* Show placeholder for empty columns */ ''}
+            ${columnWidgets.length === 0 && this._dragPreview?.column === columnIndex
+                ? this.renderDragPlaceholder(this._draggedWidget!)
+                : ''}
           </div>
         `)}
       </div>
