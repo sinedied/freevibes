@@ -1,7 +1,9 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { type NoteWidget } from '../services/data.js';
 import { dataService } from '../services/data.js';
+import noteIconSvg from '/note.svg?raw';
 
 @customElement('fv-notes')
 export class Notes extends LitElement {
@@ -35,6 +37,45 @@ export class Notes extends LitElement {
       font-weight: 600;
       color: var(--fv-text-primary);
       margin: 0;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-sm);
+      min-width: 0;
+      flex: 1;
+    }
+
+    .note-icon {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    :host([data-color="yellow"]) .note-icon {
+      color: var(--fv-note-yellow-border);
+    }
+
+    :host([data-color="green"]) .note-icon {
+      color: var(--fv-note-green-border);
+    }
+
+    :host([data-color="blue"]) .note-icon {
+      color: var(--fv-note-blue-border);
+    }
+
+    :host([data-color="red"]) .note-icon {
+      color: var(--fv-note-red-border);
+    }
+
+    .header-title {
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
     }
 
     .color-indicator {
@@ -231,7 +272,12 @@ export class Notes extends LitElement {
   render() {
     return html`
       <div class="header">
-        <h2 class="title">${this.widget.title}</h2>
+        <span class="header-content">
+          <span class="note-icon">
+            ${unsafeSVG(noteIconSvg)}
+          </span>
+          <h2 class="title header-title">${this.widget.title}</h2>
+        </span>
         <div class="color-indicator color-${this.widget.color}"></div>
       </div>
       <div class="content">
