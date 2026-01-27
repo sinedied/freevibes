@@ -42,6 +42,11 @@ export class Dashboard extends LitElement {
       position: relative;
     }
 
+    .widget.folded {
+      height: auto;
+      min-height: auto;
+    }
+
     .widget.dragging {
       opacity: 0.5;
       z-index: 1000;
@@ -413,10 +418,11 @@ export class Dashboard extends LitElement {
   private renderWidget(widget: Widget) {
     const isDragging = this._draggedWidget?.id === widget.id;
     const isResizing = this._resizingId === widget.id;
+    const isFolded = widget.folded || false;
     
     return html`
       <div
-        class="widget ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}"
+        class="widget ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isFolded ? 'folded' : ''}"
         data-id=${widget.id}
         @dragend=${this.handleDragEnd}
         style="--widget-height: ${widget.height || 6}; position: relative;"
