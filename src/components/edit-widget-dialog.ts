@@ -285,7 +285,7 @@ export class EditWidgetDialog extends LitElement {
     }
 
     .btn-danger:hover {
-      background-color: #c82333;
+      filter: brightness(0.9);
     }
 
     .back-btn {
@@ -385,8 +385,8 @@ export class EditWidgetDialog extends LitElement {
       title: this.widgetTitle.trim()
     };
 
-    if (this.isEditMode()) {
-      config.id = this.widget!.id;
+    if (this.isEditMode() && this.widget) {
+      config.id = this.widget.id;
     }
 
     if (this.selectedType === 'rss') {
@@ -411,8 +411,10 @@ export class EditWidgetDialog extends LitElement {
   }
 
   private handleDeleteConfirm() {
+    if (!this.widget) return;
+    
     this.dispatchEvent(new CustomEvent('delete-widget', {
-      detail: { id: this.widget!.id },
+      detail: { id: this.widget.id },
       bubbles: true
     }));
     this.handleClose();
