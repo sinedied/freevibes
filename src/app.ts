@@ -6,7 +6,7 @@ import './components/dashboard.js';
 import './components/settings.js';
 import './components/edit-widget-dialog.js';
 import settingsIcon from 'iconoir/icons/settings.svg?raw';
-import menuIcon from 'iconoir/icons/menu.svg?raw';
+import menuIcon from 'iconoir/icons/more-vert.svg?raw';
 import plusIcon from 'iconoir/icons/plus.svg?raw';
 import logOutIcon from 'iconoir/icons/log-out.svg?raw';
 
