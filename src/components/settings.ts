@@ -1,7 +1,14 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { type DashboardData } from '../services/data.js';
 import { dataService } from '../services/data.js';
+
+// Import Iconoir icons
+import xmarkIcon from 'iconoir/icons/xmark.svg?raw';
+import downloadIcon from 'iconoir/icons/download.svg?raw';
+import linkIcon from 'iconoir/icons/link.svg?raw';
+import lightBulbIcon from 'iconoir/icons/light-bulb.svg?raw';
 
 @customElement('fv-settings')
 export class Settings extends LitElement {
@@ -79,10 +86,18 @@ export class Settings extends LitElement {
       padding: var(--fv-spacing-xs);
       line-height: 1;
       transition: var(--fv-transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .close-btn:hover {
       color: var(--fv-text-primary);
+    }
+
+    .close-btn svg {
+      width: 20px;
+      height: 20px;
     }
 
     .content {
@@ -211,6 +226,15 @@ export class Settings extends LitElement {
       cursor: pointer;
       transition: var(--fv-transition);
       border: 1px solid var(--fv-border);
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-xs);
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
     }
 
     .btn-primary {
@@ -245,6 +269,9 @@ export class Settings extends LitElement {
       color: var(--fv-text-primary);
       margin: 0 0 var(--fv-spacing-xs) 0;
       font-size: var(--fv-font-size-sm);
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-xs);
     }
 
     .info-text {
@@ -252,6 +279,13 @@ export class Settings extends LitElement {
       font-size: var(--fv-font-size-xs);
       margin: 0;
       line-height: 1.4;
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      flex-shrink: 0;
     }
   `;
 
@@ -389,7 +423,7 @@ export class Settings extends LitElement {
         <div class="modal">
           <div class="header">
             <h2 class="title">Settings</h2>
-            <button class="close-btn" @click=${this.close}>&times;</button>
+            <button class="close-btn" @click=${this.close}>${unsafeSVG(xmarkIcon)}</button>
           </div>
           
           <div class="content">
@@ -520,18 +554,18 @@ export class Settings extends LitElement {
               </div>
               <div class="actions-left">
                 <button class="btn btn-secondary" @click=${this.downloadConfig}>
-                  📥 Download Config
+                  ${unsafeSVG(downloadIcon)} Download Config
                 </button>
                 ${dataService.isGistEnabled() ? html`
                   <button class="btn btn-secondary" @click=${this.viewGist}>
-                    🔗 View Gist
+                    ${unsafeSVG(linkIcon)} View Gist
                   </button>
                 ` : ''}
               </div>
             </div>
 
             <div class="info">
-              <h3 class="info-title">💡 About FreeVibes</h3>
+              <h3 class="info-title">${unsafeSVG(lightBulbIcon)} About FreeVibes</h3>
               <p class="info-text">
                 Your dashboard data is automatically saved to your browser's local storage. 
                 To sync across devices or backup your data, you can export your configuration 

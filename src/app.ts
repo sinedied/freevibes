@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { dataService, type DashboardData } from './services/data.js';
 import './components/dashboard.js';
 import './components/settings.js';
+import settingsIcon from 'iconoir/icons/settings.svg?raw';
 
 @customElement('fv-app')
 export class App extends LitElement {
@@ -55,10 +57,18 @@ export class App extends LitElement {
       cursor: pointer;
       font-size: var(--fv-font-size-sm);
       transition: var(--fv-transition);
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-xs);
     }
 
     .settings-btn:hover {
       background-color: var(--fv-accent-hover);
+    }
+
+    .settings-btn svg {
+      width: 16px;
+      height: 16px;
     }
 
     .logout-btn {
@@ -360,7 +370,10 @@ export class App extends LitElement {
       <div class="header">
         <a href="/" class="logo">FreeVibes</a>
         <nav class="nav">
-          <button class="settings-btn" @click=${this.openSettings}>Settings</button>
+          <button class="settings-btn" @click=${this.openSettings}>
+            ${unsafeSVG(settingsIcon)}
+            Settings
+          </button>
           ${this.githubLoggedIn ? html`
             <button class="logout-btn" @click=${this.handleLogout}>Logout</button>
           ` : ''}
