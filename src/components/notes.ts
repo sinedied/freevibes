@@ -398,6 +398,9 @@ export class Notes extends LitElement {
             ? html`
               <span 
                 class="caret-icon" 
+                role="button"
+                tabindex="0"
+                aria-label="${this.widget.folded ? 'Unfold widget' : 'Fold widget'}"
                 @click=${this.handleToggleFold}
                 @mouseenter=${this.handleIconMouseEnter}
                 @mouseleave=${this.handleIconMouseLeave}
