@@ -6,6 +6,9 @@ import './components/dashboard.js';
 import './components/settings.js';
 import './components/edit-widget-dialog.js';
 import settingsIcon from 'iconoir/icons/settings.svg?raw';
+import menuIcon from 'iconoir/icons/menu.svg?raw';
+import plusIcon from 'iconoir/icons/plus.svg?raw';
+import logOutIcon from 'iconoir/icons/log-out.svg?raw';
 
 const WIDGET_ORDER_SPACING = 1000;
 
@@ -19,6 +22,7 @@ export class App extends LitElement {
   @state() private githubLoggedIn = false;
   @state() private loginError: string | undefined = undefined;
   @state() private loginToken: string = '';
+  @state() private showMenu = false;
 
   static styles = css`
     :host {
@@ -51,60 +55,74 @@ export class App extends LitElement {
       display: flex;
       align-items: center;
       gap: var(--fv-spacing-md);
+      position: relative;
     }
 
-    .settings-btn {
-      background: var(--fv-accent-primary);
+    .menu-btn {
+      background: none;
       border: none;
-      border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-sm) var(--fv-spacing-md);
-      color: white;
       cursor: pointer;
-      font-size: var(--fv-font-size-sm);
+      padding: var(--fv-spacing-sm);
+      color: var(--fv-text-primary);
       transition: var(--fv-transition);
+      border-radius: var(--fv-border-radius);
       display: flex;
       align-items: center;
-      gap: var(--fv-spacing-xs);
+      justify-content: center;
     }
 
-    .settings-btn:hover {
-      background-color: var(--fv-accent-hover);
+    .menu-btn:hover {
+      background-color: var(--fv-bg-tertiary);
     }
 
-    .add-widget-btn {
-      background: var(--fv-accent-primary);
-      border: none;
-      border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-sm) var(--fv-spacing-md);
-      color: white;
-      cursor: pointer;
-      font-size: var(--fv-font-size-sm);
-      transition: var(--fv-transition);
+    .menu-btn svg {
+      width: 24px;
+      height: 24px;
     }
 
-    .add-widget-btn:hover {
-      background-color: var(--fv-accent-hover);
-    }
-
-    .settings-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .logout-btn {
-      background: none;
+    .menu-dropdown {
+      position: absolute;
+      top: calc(100% + var(--fv-spacing-sm));
+      right: 0;
+      background: var(--fv-bg-secondary);
       border: 1px solid var(--fv-border);
       border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-sm) var(--fv-spacing-md);
-      color: var(--fv-text-secondary);
+      box-shadow: 0 4px 12px var(--fv-shadow);
+      min-width: 200px;
+      z-index: 1000;
+      overflow: hidden;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-md);
+      padding: var(--fv-spacing-md);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
       cursor: pointer;
+      color: var(--fv-text-primary);
       font-size: var(--fv-font-size-sm);
       transition: var(--fv-transition);
     }
 
-    .logout-btn:hover {
+    .menu-item:hover {
       background-color: var(--fv-bg-tertiary);
-      border-color: var(--fv-danger);
+    }
+
+    .menu-item svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .menu-item.logout-item {
+      border-top: 1px solid var(--fv-border);
+      color: var(--fv-text-secondary);
+    }
+
+    .menu-item.logout-item:hover {
       color: var(--fv-danger);
     }
 
@@ -220,7 +238,22 @@ export class App extends LitElement {
         this.applyTheme();
       }
     });
+
+    // Close menu on outside click
+    document.addEventListener('click', this.handleDocumentClick);
   }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    document.removeEventListener('click', this.handleDocumentClick);
+  }
+
+  private handleDocumentClick = (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.nav')) {
+      this.showMenu = false;
+    }
+  };
 
   private async loadDashboardData() {
     try {
@@ -331,11 +364,17 @@ export class App extends LitElement {
   private handleLogout() {
     dataService.logout();
     this.githubLoggedIn = false;
-    // No need to reload data since we keep local data
+    this.showMenu = false;
+  }
+
+  private toggleMenu(event: MouseEvent) {
+    event.stopPropagation();
+    this.showMenu = !this.showMenu;
   }
 
   private openSettings() {
     this.showSettings = true;
+    this.showMenu = false;
   }
 
   private closeSettings() {
@@ -345,6 +384,7 @@ export class App extends LitElement {
   private openAddWidget() {
     this.editingWidget = undefined;
     this.showEditWidget = true;
+    this.showMenu = false;
   }
 
   private closeEditWidget() {
@@ -490,13 +530,26 @@ export class App extends LitElement {
       <div class="header">
         <a href="/" class="logo">FreeVibes</a>
         <nav class="nav">
-          <button class="add-widget-btn" @click=${this.openAddWidget} title="Add widget">+</button>
-          <button class="settings-btn" @click=${this.openSettings}>
-            ${unsafeSVG(settingsIcon)}
-            Settings
+          <button class="menu-btn" @click=${this.toggleMenu} title="Menu">
+            ${unsafeSVG(menuIcon)}
           </button>
-          ${this.githubLoggedIn ? html`
-            <button class="logout-btn" @click=${this.handleLogout}>Logout</button>
+          ${this.showMenu ? html`
+            <div class="menu-dropdown">
+              <button class="menu-item" @click=${this.openAddWidget}>
+                ${unsafeSVG(plusIcon)}
+                <span>Add widget</span>
+              </button>
+              <button class="menu-item" @click=${this.openSettings}>
+                ${unsafeSVG(settingsIcon)}
+                <span>Settings</span>
+              </button>
+              ${this.githubLoggedIn ? html`
+                <button class="menu-item logout-item" @click=${this.handleLogout}>
+                  ${unsafeSVG(logOutIcon)}
+                  <span>Logout</span>
+                </button>
+              ` : ''}
+            </div>
           ` : ''}
         </nav>
       </div>
