@@ -6,6 +6,7 @@ import { dataService } from '../services/data.js';
 import noteIconSvg from '/note.svg?raw';
 import checkIcon from 'iconoir/icons/check.svg?raw';
 import xmarkIcon from 'iconoir/icons/xmark.svg?raw';
+import editIcon from 'iconoir/icons/edit.svg?raw';
 
 @customElement('fv-notes')
 export class Notes extends LitElement {
@@ -101,6 +102,42 @@ export class Notes extends LitElement {
 
     .color-red {
       background-color: var(--fv-note-red-border);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--fv-spacing-xs);
+      align-items: center;
+    }
+
+    .configure-btn {
+      background: none;
+      border: 1px solid var(--fv-border);
+      border-radius: var(--fv-border-radius);
+      padding: var(--fv-spacing-xs);
+      cursor: pointer;
+      color: var(--fv-text-secondary);
+      transition: var(--fv-transition);
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    :host(:hover) .configure-btn,
+    :host(:focus-within) .configure-btn {
+      opacity: 1;
+    }
+
+    .configure-btn:hover {
+      background-color: var(--fv-bg-primary);
+      border-color: var(--fv-accent-primary);
+      color: var(--fv-accent-primary);
+    }
+
+    .configure-btn svg {
+      width: 14px;
+      height: 14px;
     }
 
     .content {
@@ -279,6 +316,15 @@ export class Notes extends LitElement {
     });
   }
 
+  private handleConfigure(e: Event) {
+    e.stopPropagation();
+    this.dispatchEvent(new CustomEvent('configure-widget', {
+      detail: this.widget,
+      bubbles: true,
+      composed: true
+    }));
+  }
+
   render() {
     return html`
       <div class="header">
@@ -288,7 +334,12 @@ export class Notes extends LitElement {
           </span>
           <h2 class="title header-title">${this.widget.title}</h2>
         </span>
-        <div class="color-indicator color-${this.widget.color}"></div>
+        <div class="header-actions">
+          <button class="configure-btn" @click=${this.handleConfigure} title="Configure widget">
+            ${unsafeSVG(editIcon)}
+          </button>
+          <div class="color-indicator color-${this.widget.color}"></div>
+        </div>
       </div>
       <div class="content">
         ${this.isEditing ? html`

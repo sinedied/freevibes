@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { type RSSWidget, type RSSItem } from '../services/data.js';
 import { rssService } from '../services/rss.js';
 import rssIconUrl from '/rss.svg?url';
+import editIcon from 'iconoir/icons/edit.svg?raw';
 
 @customElement('fv-rss')
 export class RSS extends LitElement {
@@ -181,6 +183,42 @@ export class RSS extends LitElement {
       text-overflow: ellipsis;
       flex: 1;
     }
+
+    .header-actions {
+      display: flex;
+      gap: var(--fv-spacing-xs);
+      align-items: center;
+    }
+
+    .configure-btn {
+      background: none;
+      border: 1px solid var(--fv-border);
+      border-radius: var(--fv-border-radius);
+      padding: var(--fv-spacing-xs);
+      cursor: pointer;
+      color: var(--fv-text-secondary);
+      transition: var(--fv-transition);
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    :host(:hover) .configure-btn,
+    :host(:focus-within) .configure-btn {
+      opacity: 1;
+    }
+
+    .configure-btn:hover {
+      background-color: var(--fv-bg-primary);
+      border-color: var(--fv-accent-primary);
+      color: var(--fv-accent-primary);
+    }
+
+    .configure-btn svg {
+      width: 14px;
+      height: 14px;
+    }
   `;
 
   async connectedCallback() {
@@ -290,6 +328,15 @@ export class RSS extends LitElement {
     }
   }
 
+  private handleConfigure(e: Event) {
+    e.stopPropagation();
+    this.dispatchEvent(new CustomEvent('configure-widget', {
+      detail: this.widget,
+      bubbles: true,
+      composed: true
+    }));
+  }
+
   render() {
     const displayItems = this.items.slice(0, this.displayCount);
     const hasMoreItems = this.displayCount < this.items.length;
@@ -308,6 +355,11 @@ export class RSS extends LitElement {
           />
           <h2 class="title header-title" title="${this.feedTitle}">${this.feedTitle}</h2>
         </span>
+        <div class="header-actions">
+          <button class="configure-btn" @click=${this.handleConfigure} title="Configure widget">
+            ${unsafeSVG(editIcon)}
+          </button>
+        </div>
       </div>
       <div class="content" @scroll=${this.handleScroll}>
         ${this.loading ? html`
