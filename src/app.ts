@@ -72,19 +72,12 @@ export class App extends LitElement {
       padding: var(--fv-spacing-sm) var(--fv-spacing-md);
       color: white;
       cursor: pointer;
-      font-size: var(--fv-font-size-lg);
-      font-weight: bold;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-size: var(--fv-font-size-sm);
       transition: var(--fv-transition);
     }
 
     .add-widget-btn:hover {
       background-color: var(--fv-accent-hover);
-      transform: scale(1.05);
     }
 
     .logout-btn {
@@ -350,13 +343,18 @@ export class App extends LitElement {
     const config = event.detail;
     if (!this.data) return;
 
+    const columnWidgets = this.data.widgets.filter(w => w.position.column === 1);
+    const minOrder = columnWidgets.length > 0 
+      ? Math.min(...columnWidgets.map(w => w.position.order))
+      : WIDGET_ORDER_SPACING;
+
     const newWidget: Widget = {
       id: crypto.randomUUID(),
       type: config.type,
       title: config.title,
       position: {
         column: 1,
-        order: (this.data.widgets.filter(w => w.position.column === 1).length + 1) * WIDGET_ORDER_SPACING
+        order: minOrder - WIDGET_ORDER_SPACING
       },
       height: 6
     };
