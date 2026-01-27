@@ -5,6 +5,8 @@ import './components/dashboard.js';
 import './components/settings.js';
 import './components/add-widget-dialog.js';
 
+const WIDGET_ORDER_SPACING = 1000;
+
 @customElement('fv-app')
 export class App extends LitElement {
   @state() private data: DashboardData | undefined = undefined;
@@ -349,12 +351,12 @@ export class App extends LitElement {
     if (!this.data) return;
 
     const newWidget: Widget = {
-      id: `widget-${Date.now()}`,
+      id: crypto.randomUUID(),
       type: config.type,
       title: config.title,
       position: {
         column: 1,
-        order: (this.data.widgets.filter(w => w.position.column === 1).length + 1) * 1000
+        order: (this.data.widgets.filter(w => w.position.column === 1).length + 1) * WIDGET_ORDER_SPACING
       },
       height: 6
     };

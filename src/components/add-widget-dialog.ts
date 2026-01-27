@@ -325,6 +325,12 @@ export class AddWidgetDialog extends LitElement {
     return true;
   }
 
+  private handleOverlayClick(e: Event) {
+    if ((e.target as HTMLElement).classList.contains('overlay')) {
+      this.handleClose();
+    }
+  }
+
   private renderSelectStep() {
     return html`
       <div class="content">
@@ -411,7 +417,7 @@ export class AddWidgetDialog extends LitElement {
 
   render() {
     return html`
-      <div class="overlay" @click=${(e: Event) => e.target === e.currentTarget && this.handleClose()}>
+      <div class="overlay" @click=${this.handleOverlayClick}>
         <div class="modal">
           <div class="header">
             <h2 class="title">
