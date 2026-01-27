@@ -4,6 +4,8 @@ import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { type NoteWidget } from '../services/data.js';
 import { dataService } from '../services/data.js';
 import noteIconSvg from '/note.svg?raw';
+import checkIcon from 'iconoir/icons/check.svg?raw';
+import xmarkIcon from 'iconoir/icons/xmark.svg?raw';
 
 @customElement('fv-notes')
 export class Notes extends LitElement {
@@ -183,10 +185,18 @@ export class Notes extends LitElement {
       cursor: pointer;
       font-size: var(--fv-font-size-xs);
       transition: var(--fv-transition);
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-xs);
     }
 
     .edit-btn:hover {
       background-color: var(--fv-accent-hover);
+    }
+
+    .edit-btn svg {
+      width: 12px;
+      height: 12px;
     }
 
     .cancel-btn {
@@ -292,9 +302,11 @@ export class Notes extends LitElement {
           </textarea>
           <div class="edit-controls">
             <button class="edit-btn cancel-btn" @click=${this.cancelEditing}>
+              ${unsafeSVG(xmarkIcon)}
               Cancel
             </button>
             <button class="edit-btn" @click=${this.saveNote}>
+              ${unsafeSVG(checkIcon)}
               Save
             </button>
           </div>

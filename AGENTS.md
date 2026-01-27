@@ -16,6 +16,7 @@ Description: A web dashboard for RSS/Notes inspired by the old NetVibes.
 - Uses GitHub Actions for CI/CD
 - Use Vite as the build tool
 - Use latest CSS features like CSS variables and custom properties, container queries, and nesting selectors. The theme is fully customizable through CSS variables. Use the prefix `--fv-` for all custom properties.
+- When an icon is needed, use the `iconoir` icon library. Use https://iconoir.com for reference
 
 ## Components
 - `app.ts`: Main app component

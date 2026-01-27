@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { customElement, state } from 'lit/decorators.js';
 import { dataService, type DashboardData, type Widget, type RSSWidget, type NoteWidget } from './services/data.js';
 import './components/dashboard.js';
 import './components/settings.js';
 import './components/add-widget-dialog.js';
+import settingsIcon from 'iconoir/icons/settings.svg?raw';
 
 const WIDGET_ORDER_SPACING = 1000;
 
@@ -59,6 +61,9 @@ export class App extends LitElement {
       cursor: pointer;
       font-size: var(--fv-font-size-sm);
       transition: var(--fv-transition);
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-xs);
     }
 
     .settings-btn:hover {
@@ -78,6 +83,11 @@ export class App extends LitElement {
 
     .add-widget-btn:hover {
       background-color: var(--fv-accent-hover);
+    }
+
+    .settings-btn svg {
+      width: 16px;
+      height: 16px;
     }
 
     .logout-btn {
@@ -425,7 +435,10 @@ export class App extends LitElement {
         <a href="/" class="logo">FreeVibes</a>
         <nav class="nav">
           <button class="add-widget-btn" @click=${this.openAddWidget} title="Add widget">+</button>
-          <button class="settings-btn" @click=${this.openSettings}>Settings</button>
+          <button class="settings-btn" @click=${this.openSettings}>
+            ${unsafeSVG(settingsIcon)}
+            Settings
+          </button>
           ${this.githubLoggedIn ? html`
             <button class="logout-btn" @click=${this.handleLogout}>Logout</button>
           ` : ''}
