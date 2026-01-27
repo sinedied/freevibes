@@ -1,5 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
+import antennaIcon from 'iconoir/icons/antenna.svg?raw';
+import pageEditIcon from 'iconoir/icons/page-edit.svg?raw';
 
 type WidgetType = 'rss' | 'note' | undefined;
 type NoteColor = 'yellow' | 'green' | 'blue' | 'red';
@@ -122,8 +125,15 @@ export class AddWidgetDialog extends LitElement {
     }
 
     .widget-type-icon {
-      font-size: 3rem;
-      margin-bottom: var(--fv-spacing-sm);
+      width: 3rem;
+      height: 3rem;
+      margin: 0 auto var(--fv-spacing-sm) auto;
+      color: var(--fv-accent-primary);
+    }
+
+    .widget-type-icon svg {
+      width: 100%;
+      height: 100%;
     }
 
     .widget-type-title {
@@ -336,12 +346,12 @@ export class AddWidgetDialog extends LitElement {
       <div class="content">
         <div class="widget-types">
           <div class="widget-type-card" @click=${() => this.handleSelectType('rss')}>
-            <div class="widget-type-icon">📡</div>
+            <div class="widget-type-icon">${unsafeSVG(antennaIcon)}</div>
             <h3 class="widget-type-title">RSS Feed</h3>
             <p class="widget-type-description">Subscribe to RSS/Atom feeds</p>
           </div>
           <div class="widget-type-card" @click=${() => this.handleSelectType('note')}>
-            <div class="widget-type-icon">📝</div>
+            <div class="widget-type-icon">${unsafeSVG(pageEditIcon)}</div>
             <h3 class="widget-type-title">Note</h3>
             <p class="widget-type-description">Create a sticky note</p>
           </div>
