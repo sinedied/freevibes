@@ -4,6 +4,7 @@ import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { type Widget, type RSSWidget, type NoteWidget } from '../services/data.js';
 import antennaIcon from 'iconoir/icons/antenna.svg?raw';
 import pageEditIcon from 'iconoir/icons/page-edit.svg?raw';
+import trashIcon from 'iconoir/icons/trash.svg?raw';
 
 type WidgetType = 'rss' | 'note' | undefined;
 type NoteColor = 'yellow' | 'green' | 'blue' | 'red';
@@ -282,10 +283,18 @@ export class EditWidgetDialog extends LitElement {
     .btn-danger {
       background-color: var(--fv-danger);
       color: white;
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-xs);
     }
 
     .btn-danger:hover {
       filter: brightness(0.9);
+    }
+
+    .btn-danger svg {
+      width: 16px;
+      height: 16px;
     }
 
     .back-btn {
@@ -511,7 +520,10 @@ export class EditWidgetDialog extends LitElement {
             <p class="confirm-message">Are you sure you want to delete this widget?</p>
             <div class="confirm-actions">
               <button class="btn btn-cancel" @click=${this.handleDeleteCancel}>Cancel</button>
-              <button class="btn btn-danger" @click=${this.handleDeleteConfirm}>Delete</button>
+              <button class="btn btn-danger" @click=${this.handleDeleteConfirm}>
+                ${unsafeSVG(trashIcon)}
+                Delete
+              </button>
             </div>
           </div>
         ` : ''}
@@ -522,7 +534,10 @@ export class EditWidgetDialog extends LitElement {
             <button class="btn back-btn" @click=${this.handleBack}>Back</button>
           ` : ''}
           ${this.isEditMode() && !this.showDeleteConfirm ? html`
-            <button class="btn btn-danger" @click=${this.handleDeleteClick}>Delete</button>
+            <button class="btn btn-danger" @click=${this.handleDeleteClick}>
+              ${unsafeSVG(trashIcon)}
+              Delete
+            </button>
           ` : ''}
         </div>
         <div class="footer-right">
