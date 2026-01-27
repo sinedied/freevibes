@@ -1,16 +1,20 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
-import { dataService, type DashboardData } from './services/data.js';
+import { customElement, state } from 'lit/decorators.js';
+import { dataService, type DashboardData, type Widget, type RSSWidget, type NoteWidget } from './services/data.js';
 import './components/dashboard.js';
 import './components/settings.js';
+import './components/add-widget-dialog.js';
 import settingsIcon from 'iconoir/icons/settings.svg?raw';
+
+const WIDGET_ORDER_SPACING = 1000;
 
 @customElement('fv-app')
 export class App extends LitElement {
   @state() private data: DashboardData | undefined = undefined;
   @state() private loading = true;
   @state() private showSettings = false;
+  @state() private showAddWidget = false;
   @state() private githubLoggedIn = false;
   @state() private loginError: string | undefined = undefined;
   @state() private loginToken: string = '';
@@ -63,6 +67,21 @@ export class App extends LitElement {
     }
 
     .settings-btn:hover {
+      background-color: var(--fv-accent-hover);
+    }
+
+    .add-widget-btn {
+      background: var(--fv-accent-primary);
+      border: none;
+      border-radius: var(--fv-border-radius);
+      padding: var(--fv-spacing-sm) var(--fv-spacing-md);
+      color: white;
+      cursor: pointer;
+      font-size: var(--fv-font-size-sm);
+      transition: var(--fv-transition);
+    }
+
+    .add-widget-btn:hover {
       background-color: var(--fv-accent-hover);
     }
 
@@ -322,6 +341,51 @@ export class App extends LitElement {
     this.showSettings = false;
   }
 
+  private openAddWidget() {
+    this.showAddWidget = true;
+  }
+
+  private closeAddWidget() {
+    this.showAddWidget = false;
+  }
+
+  private async handleAddWidget(event: CustomEvent) {
+    const config = event.detail;
+    if (!this.data) return;
+
+    const columnWidgets = this.data.widgets.filter(w => w.position.column === 1);
+    const minOrder = columnWidgets.length > 0 
+      ? Math.min(...columnWidgets.map(w => w.position.order))
+      : WIDGET_ORDER_SPACING;
+
+    const newWidget: Widget = {
+      id: crypto.randomUUID(),
+      type: config.type,
+      title: config.title,
+      position: {
+        column: 1,
+        order: minOrder - WIDGET_ORDER_SPACING
+      },
+      height: 6
+    };
+
+    if (config.type === 'rss') {
+      (newWidget as RSSWidget).feedUrl = config.feedUrl;
+    } else if (config.type === 'note') {
+      (newWidget as NoteWidget).content = config.content || '';
+      (newWidget as NoteWidget).color = config.color || 'yellow';
+    }
+
+    const updatedData = {
+      ...this.data,
+      widgets: [...this.data.widgets, newWidget]
+    };
+
+    this.data = updatedData;
+    await dataService.saveData(updatedData);
+    this.showAddWidget = false;
+  }
+
   render() {
     if (this.loading) {
       return html`
@@ -370,6 +434,7 @@ export class App extends LitElement {
       <div class="header">
         <a href="/" class="logo">FreeVibes</a>
         <nav class="nav">
+          <button class="add-widget-btn" @click=${this.openAddWidget} title="Add widget">+</button>
           <button class="settings-btn" @click=${this.openSettings}>
             ${unsafeSVG(settingsIcon)}
             Settings
@@ -392,6 +457,13 @@ export class App extends LitElement {
           @settings-updated=${this.handleSettingsUpdate}
           @close=${this.closeSettings}>
         </fv-settings>
+      ` : ''}
+      ${this.showAddWidget ? html`
+        <fv-add-widget-dialog
+          ?open=${this.showAddWidget}
+          @add-widget=${this.handleAddWidget}
+          @close=${this.closeAddWidget}>
+        </fv-add-widget-dialog>
       ` : ''}
     `;
   }
