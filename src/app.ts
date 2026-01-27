@@ -4,7 +4,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { dataService, type DashboardData, type Widget, type RSSWidget, type NoteWidget } from './services/data.js';
 import './components/dashboard.js';
 import './components/settings.js';
-import './components/add-widget-dialog.js';
+import './components/edit-widget-dialog.js';
 import settingsIcon from 'iconoir/icons/settings.svg?raw';
 
 const WIDGET_ORDER_SPACING = 1000;
@@ -14,7 +14,8 @@ export class App extends LitElement {
   @state() private data: DashboardData | undefined = undefined;
   @state() private loading = true;
   @state() private showSettings = false;
-  @state() private showAddWidget = false;
+  @state() private showEditWidget = false;
+  @state() private editingWidget: Widget | undefined = undefined;
   @state() private githubLoggedIn = false;
   @state() private loginError: string | undefined = undefined;
   @state() private loginToken: string = '';
@@ -342,11 +343,18 @@ export class App extends LitElement {
   }
 
   private openAddWidget() {
-    this.showAddWidget = true;
+    this.editingWidget = undefined;
+    this.showEditWidget = true;
   }
 
-  private closeAddWidget() {
-    this.showAddWidget = false;
+  private closeEditWidget() {
+    this.showEditWidget = false;
+    this.editingWidget = undefined;
+  }
+
+  private handleConfigureWidget(event: CustomEvent) {
+    this.editingWidget = event.detail;
+    this.showEditWidget = true;
   }
 
   private async handleAddWidget(event: CustomEvent) {
@@ -383,7 +391,55 @@ export class App extends LitElement {
 
     this.data = updatedData;
     await dataService.saveData(updatedData);
-    this.showAddWidget = false;
+    this.showEditWidget = false;
+  }
+
+  private async handleEditWidget(event: CustomEvent) {
+    const config = event.detail;
+    if (!this.data || !config.id) return;
+
+    const updatedWidgets = this.data.widgets.map(w => {
+      if (w.id !== config.id) return w;
+
+      const updatedWidget: Widget = {
+        ...w,
+        title: config.title
+      };
+
+      if (config.type === 'rss') {
+        (updatedWidget as RSSWidget).feedUrl = config.feedUrl;
+      } else if (config.type === 'note') {
+        (updatedWidget as NoteWidget).content = config.content || '';
+        (updatedWidget as NoteWidget).color = config.color;
+      }
+
+      return updatedWidget;
+    });
+
+    const updatedData = {
+      ...this.data,
+      widgets: updatedWidgets
+    };
+
+    this.data = updatedData;
+    await dataService.saveData(updatedData);
+    this.showEditWidget = false;
+    this.editingWidget = undefined;
+  }
+
+  private async handleDeleteWidget(event: CustomEvent) {
+    const { id } = event.detail;
+    if (!this.data || !id) return;
+
+    const updatedData = {
+      ...this.data,
+      widgets: this.data.widgets.filter(w => w.id !== id)
+    };
+
+    this.data = updatedData;
+    await dataService.saveData(updatedData);
+    this.showEditWidget = false;
+    this.editingWidget = undefined;
   }
 
   render() {
@@ -447,7 +503,8 @@ export class App extends LitElement {
       <main class="main">
         <fv-dashboard 
           .data=${this.data} 
-          @data-updated=${this.handleDataUpdate}>
+          @data-updated=${this.handleDataUpdate}
+          @configure-widget=${this.handleConfigureWidget}>
         </fv-dashboard>
       </main>
       ${this.showSettings ? html`
@@ -458,12 +515,15 @@ export class App extends LitElement {
           @close=${this.closeSettings}>
         </fv-settings>
       ` : ''}
-      ${this.showAddWidget ? html`
-        <fv-add-widget-dialog
-          ?open=${this.showAddWidget}
+      ${this.showEditWidget ? html`
+        <fv-edit-widget-dialog
+          ?open=${this.showEditWidget}
+          .widget=${this.editingWidget}
           @add-widget=${this.handleAddWidget}
-          @close=${this.closeAddWidget}>
-        </fv-add-widget-dialog>
+          @edit-widget=${this.handleEditWidget}
+          @delete-widget=${this.handleDeleteWidget}
+          @close=${this.closeEditWidget}>
+        </fv-edit-widget-dialog>
       ` : ''}
     `;
   }

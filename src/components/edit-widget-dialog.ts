@@ -1,13 +1,16 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
+import { type Widget, type RSSWidget, type NoteWidget } from '../services/data.js';
 import antennaIcon from 'iconoir/icons/antenna.svg?raw';
 import pageEditIcon from 'iconoir/icons/page-edit.svg?raw';
+import trashIcon from 'iconoir/icons/trash.svg?raw';
 
 type WidgetType = 'rss' | 'note' | undefined;
 type NoteColor = 'yellow' | 'green' | 'blue' | 'red';
 
 interface WidgetConfig {
+  id?: string;
   type: WidgetType;
   title: string;
   feedUrl?: string;
@@ -15,15 +18,17 @@ interface WidgetConfig {
   color?: NoteColor;
 }
 
-@customElement('fv-add-widget-dialog')
-export class AddWidgetDialog extends LitElement {
+@customElement('fv-edit-widget-dialog')
+export class EditWidgetDialog extends LitElement {
   @property({ type: Boolean }) open = false;
+  @property({ type: Object }) widget: Widget | undefined = undefined;
   @state() private step: 'select' | 'configure' = 'select';
   @state() private selectedType: WidgetType = undefined;
   @state() private widgetTitle = '';
   @state() private feedUrl = '';
   @state() private content = '';
   @state() private color: NoteColor = 'yellow';
+  @state() private showDeleteConfirm = false;
 
   static styles = css`
     :host {
@@ -227,8 +232,19 @@ export class AddWidgetDialog extends LitElement {
       padding: var(--fv-spacing-lg);
       border-top: 1px solid var(--fv-border);
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       gap: var(--fv-spacing-sm);
+    }
+
+    .footer-left {
+      display: flex;
+      gap: var(--fv-spacing-sm);
+    }
+
+    .footer-right {
+      display: flex;
+      gap: var(--fv-spacing-sm);
+      margin-left: auto;
     }
 
     .btn {
@@ -264,6 +280,23 @@ export class AddWidgetDialog extends LitElement {
       cursor: not-allowed;
     }
 
+    .btn-danger {
+      background-color: var(--fv-danger);
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-xs);
+    }
+
+    .btn-danger:hover {
+      filter: brightness(0.9);
+    }
+
+    .btn-danger svg {
+      width: 16px;
+      height: 16px;
+    }
+
     .back-btn {
       background-color: var(--fv-bg-tertiary);
       color: var(--fv-text-primary);
@@ -273,7 +306,31 @@ export class AddWidgetDialog extends LitElement {
     .back-btn:hover {
       background-color: var(--fv-bg-primary);
     }
+
+    .confirm-dialog {
+      margin-top: var(--fv-spacing-md);
+      padding: var(--fv-spacing-md);
+      background-color: var(--fv-bg-tertiary);
+      border: 1px solid var(--fv-border);
+      border-radius: var(--fv-border-radius);
+    }
+
+    .confirm-message {
+      font-size: var(--fv-font-size-sm);
+      color: var(--fv-text-primary);
+      margin: 0 0 var(--fv-spacing-sm) 0;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: var(--fv-spacing-sm);
+      justify-content: flex-end;
+    }
   `;
+
+  private isEditMode(): boolean {
+    return this.widget !== undefined;
+  }
 
   private resetForm() {
     this.step = 'select';
@@ -282,6 +339,30 @@ export class AddWidgetDialog extends LitElement {
     this.feedUrl = '';
     this.content = '';
     this.color = 'yellow';
+    this.showDeleteConfirm = false;
+  }
+
+  private initializeForm() {
+    if (this.widget) {
+      this.step = 'configure';
+      this.selectedType = this.widget.type;
+      this.widgetTitle = this.widget.title;
+      
+      if (this.widget.type === 'rss') {
+        this.feedUrl = (this.widget as RSSWidget).feedUrl;
+      } else if (this.widget.type === 'note') {
+        this.content = (this.widget as NoteWidget).content || '';
+        this.color = (this.widget as NoteWidget).color || 'yellow';
+      }
+    } else {
+      this.resetForm();
+    }
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('open') && this.open) {
+      this.initializeForm();
+    }
   }
 
   private handleClose() {
@@ -305,13 +386,17 @@ export class AddWidgetDialog extends LitElement {
     this.selectedType = undefined;
   }
 
-  private handleAdd() {
+  private handleSave() {
     if (!this.selectedType || !this.widgetTitle.trim()) return;
 
     const config: WidgetConfig = {
       type: this.selectedType,
       title: this.widgetTitle.trim()
     };
+
+    if (this.isEditMode() && this.widget) {
+      config.id = this.widget.id;
+    }
 
     if (this.selectedType === 'rss') {
       if (!this.feedUrl.trim()) return;
@@ -321,12 +406,31 @@ export class AddWidgetDialog extends LitElement {
       config.color = this.color;
     }
 
-    this.dispatchEvent(new CustomEvent('add-widget', {
+    const eventName = this.isEditMode() ? 'edit-widget' : 'add-widget';
+    this.dispatchEvent(new CustomEvent(eventName, {
       detail: config,
       bubbles: true
     }));
 
     this.handleClose();
+  }
+
+  private handleDeleteClick() {
+    this.showDeleteConfirm = true;
+  }
+
+  private handleDeleteConfirm() {
+    if (!this.widget) return;
+    
+    this.dispatchEvent(new CustomEvent('delete-widget', {
+      detail: { id: this.widget.id },
+      bubbles: true
+    }));
+    this.handleClose();
+  }
+
+  private handleDeleteCancel() {
+    this.showDeleteConfirm = false;
   }
 
   private isFormValid(): boolean {
@@ -410,17 +514,42 @@ export class AddWidgetDialog extends LitElement {
             </div>
           </div>
         ` : ''}
+
+        ${this.showDeleteConfirm ? html`
+          <div class="confirm-dialog">
+            <p class="confirm-message">Are you sure you want to delete this widget?</p>
+            <div class="confirm-actions">
+              <button class="btn btn-cancel" @click=${this.handleDeleteCancel}>Cancel</button>
+              <button class="btn btn-danger" @click=${this.handleDeleteConfirm}>
+                ${unsafeSVG(trashIcon)}
+                Delete
+              </button>
+            </div>
+          </div>
+        ` : ''}
       </div>
       <div class="footer">
-        <button class="btn back-btn" @click=${this.handleBack}>Back</button>
-        <button class="btn btn-cancel" @click=${this.handleClose}>Cancel</button>
-        <button
-          class="btn btn-primary"
-          @click=${this.handleAdd}
-          ?disabled=${!this.isFormValid()}
-        >
-          Add Widget
-        </button>
+        <div class="footer-left">
+          ${!this.isEditMode() ? html`
+            <button class="btn back-btn" @click=${this.handleBack}>Back</button>
+          ` : ''}
+          ${this.isEditMode() && !this.showDeleteConfirm ? html`
+            <button class="btn btn-danger" @click=${this.handleDeleteClick}>
+              ${unsafeSVG(trashIcon)}
+              Delete
+            </button>
+          ` : ''}
+        </div>
+        <div class="footer-right">
+          <button class="btn btn-cancel" @click=${this.handleClose}>Cancel</button>
+          <button
+            class="btn btn-primary"
+            @click=${this.handleSave}
+            ?disabled=${!this.isFormValid()}
+          >
+            ${this.isEditMode() ? 'Save' : 'Add Widget'}
+          </button>
+        </div>
       </div>
     `;
   }
@@ -431,14 +560,17 @@ export class AddWidgetDialog extends LitElement {
         <div class="modal">
           <div class="header">
             <h2 class="title">
-              ${this.step === 'select' ? 'Add Widget' : `Configure ${this.selectedType === 'rss' ? 'RSS Feed' : 'Note'}`}
+              ${this.step === 'select' ? 'Add Widget' : this.isEditMode() ? `Edit ${this.selectedType === 'rss' ? 'RSS Feed' : 'Note'}` : `Configure ${this.selectedType === 'rss' ? 'RSS Feed' : 'Note'}`}
             </h2>
             <button class="close-btn" @click=${this.handleClose}>×</button>
           </div>
           ${this.step === 'select' ? this.renderSelectStep() : this.renderConfigureStep()}
           ${this.step === 'select' ? html`
             <div class="footer">
-              <button class="btn btn-cancel" @click=${this.handleClose}>Cancel</button>
+              <div class="footer-left"></div>
+              <div class="footer-right">
+                <button class="btn btn-cancel" @click=${this.handleClose}>Cancel</button>
+              </div>
             </div>
           ` : ''}
         </div>
