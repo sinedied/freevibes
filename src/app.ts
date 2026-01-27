@@ -250,7 +250,7 @@ export class App extends LitElement {
 
   private handleDocumentClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
-    if (!target.closest('.nav')) {
+    if (target && target.closest && !target.closest('.nav')) {
       this.showMenu = false;
     }
   };
