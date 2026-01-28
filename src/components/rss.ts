@@ -29,7 +29,7 @@ export class RSS extends LitElement {
     }
 
     .header {
-      padding: var(--fv-spacing-sm);
+      padding: var(--fv-spacing-xs);
       border-bottom: 1px solid var(--fv-border-light);
       display: flex;
       align-items: center;

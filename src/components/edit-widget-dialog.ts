@@ -381,8 +381,9 @@ export class EditWidgetDialog extends LitElement {
     }
   }
 
-  updated(changedProperties: Map<string, unknown>) {
-    if ((changedProperties.has('open') && this.open) || (changedProperties.has('widget') && this.open)) {
+  willUpdate(changedProperties: Map<string, unknown>) {
+    // Initialize form whenever dialog opens or widget changes while open
+    if ((changedProperties.has('open') || changedProperties.has('widget')) && this.open) {
       this.initializeForm();
     }
   }
