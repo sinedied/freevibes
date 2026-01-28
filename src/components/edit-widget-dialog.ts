@@ -368,7 +368,7 @@ export class EditWidgetDialog extends LitElement {
     if (this.widget) {
       this.step = 'configure';
       this.selectedType = this.widget.type;
-      this.widgetTitle = this.widget.title;
+      this.widgetTitle = this.widget.title || '';
       
       if (this.widget.type === 'rss') {
         this.feedUrl = (this.widget as RSSWidget).feedUrl;
@@ -413,11 +413,15 @@ export class EditWidgetDialog extends LitElement {
   }
 
   private handleSave() {
-    if (!this.selectedType || !this.widgetTitle.trim()) return;
+    if (!this.selectedType) return;
+    
+    // For RSS widgets, title is optional (will use feed title if not provided)
+    // For Note widgets, title is required
+    if (this.selectedType === 'note' && !this.widgetTitle?.trim()) return;
 
     const config: WidgetConfig = {
       type: this.selectedType,
-      title: this.widgetTitle.trim()
+      title: this.widgetTitle?.trim() || ''
     };
 
     if (this.isEditMode() && this.widget) {
@@ -460,8 +464,10 @@ export class EditWidgetDialog extends LitElement {
   }
 
   private isFormValid(): boolean {
-    if (!this.widgetTitle.trim()) return false;
-    if (this.selectedType === 'rss' && !this.feedUrl.trim()) return false;
+    // For RSS widgets, title is optional (will use feed title if not provided)
+    // For Note widgets, title is required
+    if (this.selectedType === 'note' && !this.widgetTitle?.trim()) return false;
+    if (this.selectedType === 'rss' && !this.feedUrl?.trim()) return false;
     return true;
   }
 
@@ -494,13 +500,13 @@ export class EditWidgetDialog extends LitElement {
     return html`
       <div class="content">
         <div class="form-group">
-          <label class="form-label">Title</label>
+          <label class="form-label">Title${this.selectedType === 'rss' ? ' (optional)' : ''}</label>
           <input
             type="text"
             class="form-input"
             .value=${this.widgetTitle}
             @input=${(e: Event) => this.widgetTitle = (e.target as HTMLInputElement).value}
-            placeholder="Widget title"
+            placeholder="${this.selectedType === 'rss' ? 'Leave empty to use feed title' : 'Widget title'}"
             autofocus
           />
         </div>
