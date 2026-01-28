@@ -29,7 +29,7 @@ export class RSS extends LitElement {
     }
 
     .header {
-      padding: var(--fv-spacing-sm);
+      padding: var(--fv-spacing-xs);
       border-bottom: 1px solid var(--fv-border-light);
       display: flex;
       align-items: center;
@@ -227,9 +227,9 @@ export class RSS extends LitElement {
 
     .configure-btn {
       background: none;
-      border: 1px solid var(--fv-border);
+      border: none;
       border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-xs);
+      padding: 2px;
       cursor: pointer;
       color: var(--fv-text-secondary);
       transition: var(--fv-transition);
@@ -246,7 +246,6 @@ export class RSS extends LitElement {
 
     .configure-btn:hover {
       background-color: var(--fv-bg-primary);
-      border-color: var(--fv-accent-primary);
       color: var(--fv-accent-primary);
     }
 

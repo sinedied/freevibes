@@ -25,7 +25,7 @@ export class Notes extends LitElement {
     }
 
     .header {
-      padding: var(--fv-spacing-sm);
+      padding: var(--fv-spacing-xs);
       border-bottom: 1px solid var(--fv-border-light);
       display: flex;
       align-items: center;
@@ -111,29 +111,6 @@ export class Notes extends LitElement {
       flex: 1;
     }
 
-    .color-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid var(--fv-border);
-    }
-
-    .color-yellow {
-      background-color: var(--fv-note-yellow-border);
-    }
-
-    .color-green {
-      background-color: var(--fv-note-green-border);
-    }
-
-    .color-blue {
-      background-color: var(--fv-note-blue-border);
-    }
-
-    .color-red {
-      background-color: var(--fv-note-red-border);
-    }
-
     .header-actions {
       display: flex;
       gap: var(--fv-spacing-xs);
@@ -142,9 +119,9 @@ export class Notes extends LitElement {
 
     .configure-btn {
       background: none;
-      border: 1px solid var(--fv-border);
+      border: none;
       border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-xs);
+      padding: 2px;
       cursor: pointer;
       color: var(--fv-text-secondary);
       transition: var(--fv-transition);
@@ -161,7 +138,6 @@ export class Notes extends LitElement {
 
     .configure-btn:hover {
       background-color: var(--fv-bg-primary);
-      border-color: var(--fv-accent-primary);
       color: var(--fv-accent-primary);
     }
 
@@ -427,7 +403,6 @@ export class Notes extends LitElement {
           <button class="configure-btn" @click=${this.handleConfigure} title="Configure widget">
             ${unsafeSVG(editIcon)}
           </button>
-          <div class="color-indicator color-${this.widget.color}"></div>
         </div>
       </div>
       <div class="content">

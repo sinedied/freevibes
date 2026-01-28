@@ -307,18 +307,40 @@ export class EditWidgetDialog extends LitElement {
       background-color: var(--fv-bg-primary);
     }
 
-    .confirm-dialog {
-      margin-top: var(--fv-spacing-md);
-      padding: var(--fv-spacing-md);
-      background-color: var(--fv-bg-tertiary);
-      border: 1px solid var(--fv-border);
-      border-radius: var(--fv-border-radius);
+    .confirm-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .confirm-modal {
+      background-color: var(--fv-bg-secondary);
+      border-radius: var(--fv-border-radius-lg);
+      box-shadow: 0 20px 60px var(--fv-shadow);
+      max-width: 400px;
+      width: 90%;
+      padding: var(--fv-spacing-lg);
+    }
+
+    .confirm-title {
+      font-size: var(--fv-font-size-lg);
+      font-weight: 600;
+      margin: 0 0 var(--fv-spacing-md) 0;
+      color: var(--fv-text-primary);
     }
 
     .confirm-message {
       font-size: var(--fv-font-size-sm);
       color: var(--fv-text-primary);
-      margin: 0 0 var(--fv-spacing-sm) 0;
+      margin: 0 0 var(--fv-spacing-lg) 0;
+      line-height: var(--fv-line-height);
     }
 
     .confirm-actions {
@@ -346,7 +368,7 @@ export class EditWidgetDialog extends LitElement {
     if (this.widget) {
       this.step = 'configure';
       this.selectedType = this.widget.type;
-      this.widgetTitle = this.widget.title;
+      this.widgetTitle = this.widget.title || '';
       
       if (this.widget.type === 'rss') {
         this.feedUrl = (this.widget as RSSWidget).feedUrl;
@@ -360,7 +382,11 @@ export class EditWidgetDialog extends LitElement {
   }
 
   updated(changedProperties: Map<string, unknown>) {
-    if (changedProperties.has('open') && this.open) {
+    // Initialize form when dialog opens or when widget changes while dialog is open
+    const dialogOpened = changedProperties.has('open') && this.open;
+    const widgetChanged = changedProperties.has('widget') && this.open;
+    
+    if (dialogOpened || widgetChanged) {
       this.initializeForm();
     }
   }
@@ -375,7 +401,7 @@ export class EditWidgetDialog extends LitElement {
     this.step = 'configure';
     
     if (type === 'rss') {
-      this.widgetTitle = 'RSS Feed';
+      this.widgetTitle = '';
     } else if (type === 'note') {
       this.widgetTitle = 'Note';
     }
@@ -387,11 +413,15 @@ export class EditWidgetDialog extends LitElement {
   }
 
   private handleSave() {
-    if (!this.selectedType || !this.widgetTitle.trim()) return;
+    if (!this.selectedType) return;
+    
+    // For RSS widgets, title is optional (will use feed title if not provided)
+    // For Note widgets, title is required
+    if (this.selectedType === 'note' && !this.widgetTitle?.trim()) return;
 
     const config: WidgetConfig = {
       type: this.selectedType,
-      title: this.widgetTitle.trim()
+      title: this.widgetTitle?.trim() || ''
     };
 
     if (this.isEditMode() && this.widget) {
@@ -434,7 +464,9 @@ export class EditWidgetDialog extends LitElement {
   }
 
   private isFormValid(): boolean {
-    if (!this.widgetTitle.trim()) return false;
+    // For RSS widgets, title is optional (will use feed title if not provided)
+    // For Note widgets, title is required
+    if (this.selectedType === 'note' && !this.widgetTitle?.trim()) return false;
     if (this.selectedType === 'rss' && !this.feedUrl.trim()) return false;
     return true;
   }
@@ -468,13 +500,13 @@ export class EditWidgetDialog extends LitElement {
     return html`
       <div class="content">
         <div class="form-group">
-          <label class="form-label">Title</label>
+          <label class="form-label">Title${this.selectedType === 'rss' ? ' (optional)' : ''}</label>
           <input
             type="text"
             class="form-input"
             .value=${this.widgetTitle}
             @input=${(e: Event) => this.widgetTitle = (e.target as HTMLInputElement).value}
-            placeholder="Widget title"
+            placeholder="${this.selectedType === 'rss' ? 'Leave empty to use feed title' : 'Widget title'}"
             autofocus
           />
         </div>
@@ -515,25 +547,13 @@ export class EditWidgetDialog extends LitElement {
           </div>
         ` : ''}
 
-        ${this.showDeleteConfirm ? html`
-          <div class="confirm-dialog">
-            <p class="confirm-message">Are you sure you want to delete this widget?</p>
-            <div class="confirm-actions">
-              <button class="btn btn-cancel" @click=${this.handleDeleteCancel}>Cancel</button>
-              <button class="btn btn-danger" @click=${this.handleDeleteConfirm}>
-                ${unsafeSVG(trashIcon)}
-                Delete
-              </button>
-            </div>
-          </div>
-        ` : ''}
       </div>
       <div class="footer">
         <div class="footer-left">
           ${!this.isEditMode() ? html`
             <button class="btn back-btn" @click=${this.handleBack}>Back</button>
           ` : ''}
-          ${this.isEditMode() && !this.showDeleteConfirm ? html`
+          ${this.isEditMode() ? html`
             <button class="btn btn-danger" @click=${this.handleDeleteClick}>
               ${unsafeSVG(trashIcon)}
               Delete
@@ -575,6 +595,25 @@ export class EditWidgetDialog extends LitElement {
           ` : ''}
         </div>
       </div>
+      ${this.showDeleteConfirm ? html`
+        <div class="confirm-overlay" @click=${(e: Event) => {
+          if ((e.target as HTMLElement).classList.contains('confirm-overlay')) {
+            this.handleDeleteCancel();
+          }
+        }}>
+          <div class="confirm-modal">
+            <h3 class="confirm-title">Delete Widget</h3>
+            <p class="confirm-message">Are you sure you want to delete this widget? This action cannot be undone.</p>
+            <div class="confirm-actions">
+              <button class="btn btn-cancel" @click=${this.handleDeleteCancel}>Cancel</button>
+              <button class="btn btn-danger" @click=${this.handleDeleteConfirm}>
+                ${unsafeSVG(trashIcon)}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ` : ''}
     `;
   }
 }
