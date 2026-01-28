@@ -401,7 +401,7 @@ export class EditWidgetDialog extends LitElement {
     this.step = 'configure';
     
     if (type === 'rss') {
-      this.widgetTitle = 'RSS Feed';
+      this.widgetTitle = '';
     } else if (type === 'note') {
       this.widgetTitle = 'Note';
     }
