@@ -7,12 +7,15 @@ import noteIconSvg from '/note.svg?raw';
 import checkIcon from 'iconoir/icons/check.svg?raw';
 import xmarkIcon from 'iconoir/icons/xmark.svg?raw';
 import editIcon from 'iconoir/icons/edit.svg?raw';
+import navArrowDownIcon from 'iconoir/icons/nav-arrow-down.svg?raw';
+import navArrowRightIcon from 'iconoir/icons/nav-arrow-right.svg?raw';
 
 @customElement('fv-notes')
 export class Notes extends LitElement {
   @property({ type: Object }) widget!: NoteWidget;
   @state() private isEditing = false;
   @state() private editContent = '';
+  @state() private isIconHovered = false;
 
   static styles = css`
     :host {
@@ -55,6 +58,33 @@ export class Notes extends LitElement {
       height: 20px;
       object-fit: contain;
       flex-shrink: 0;
+      cursor: pointer;
+      transition: var(--fv-transition);
+    }
+
+    .note-icon:hover {
+      opacity: 0.7;
+    }
+
+    .caret-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      cursor: pointer;
+      color: var(--fv-text-secondary);
+      transition: var(--fv-transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .caret-icon:hover {
+      color: var(--fv-accent-primary);
+    }
+
+    .caret-icon svg {
+      width: 16px;
+      height: 16px;
     }
 
     :host([data-color="yellow"]) .note-icon {
@@ -146,6 +176,11 @@ export class Notes extends LitElement {
       overflow-y: auto;
       background-color: var(--note-bg);
       position: relative;
+      display: block;
+    }
+
+    :host([folded]) .content {
+      display: none;
     }
 
     :host([data-color="yellow"]) .content {
@@ -254,6 +289,9 @@ export class Notes extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     (this as any).setAttribute('data-color', this.widget.color);
+    if (this.widget.folded) {
+      this.setAttribute('folded', '');
+    }
   }
 
   private startEditing() {
@@ -325,13 +363,64 @@ export class Notes extends LitElement {
     }));
   }
 
+  private handleIconMouseEnter() {
+    this.isIconHovered = true;
+  }
+
+  private handleIconMouseLeave() {
+    this.isIconHovered = false;
+  }
+
+  private handleToggleFold(e: Event) {
+    e.stopPropagation();
+    const updatedWidget: NoteWidget = {
+      ...this.widget,
+      folded: !this.widget.folded
+    };
+
+    if (updatedWidget.folded) {
+      this.setAttribute('folded', '');
+    } else {
+      this.removeAttribute('folded');
+    }
+
+    this.dispatchEvent(new CustomEvent('widget-updated', {
+      detail: updatedWidget,
+      bubbles: true
+    }));
+  }
+
   render() {
     return html`
       <div class="header">
         <span class="header-content">
-          <span class="note-icon">
-            ${unsafeSVG(noteIconSvg)}
-          </span>
+          ${this.isIconHovered
+            ? html`
+              <span 
+                class="caret-icon" 
+                role="button"
+                tabindex="0"
+                aria-label="${this.widget.folded ? 'Unfold widget' : 'Fold widget'}"
+                @click=${this.handleToggleFold}
+                @mouseenter=${this.handleIconMouseEnter}
+                @mouseleave=${this.handleIconMouseLeave}
+              >
+                ${this.widget.folded 
+                  ? unsafeSVG(navArrowRightIcon)
+                  : unsafeSVG(navArrowDownIcon)
+                }
+              </span>
+            `
+            : html`
+              <span 
+                class="note-icon"
+                @mouseenter=${this.handleIconMouseEnter}
+                @mouseleave=${this.handleIconMouseLeave}
+              >
+                ${unsafeSVG(noteIconSvg)}
+              </span>
+            `
+          }
           <h2 class="title header-title">${this.widget.title}</h2>
         </span>
         <div class="header-actions">

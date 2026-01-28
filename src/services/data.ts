@@ -19,6 +19,7 @@ export interface Widget {
     order: number;
   };
   height?: number; // Height in lines (em units)
+  folded?: boolean; // Whether the widget is folded (showing only title bar)
 }
 
 export interface RSSWidget extends Widget {

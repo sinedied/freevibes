@@ -5,6 +5,8 @@ import { type RSSWidget, type RSSItem } from '../services/data.js';
 import { rssService } from '../services/rss.js';
 import rssIconUrl from '/rss.svg?url';
 import editIcon from 'iconoir/icons/edit.svg?raw';
+import navArrowDownIcon from 'iconoir/icons/nav-arrow-down.svg?raw';
+import navArrowRightIcon from 'iconoir/icons/nav-arrow-right.svg?raw';
 
 @customElement('fv-rss')
 export class RSS extends LitElement {
@@ -15,6 +17,7 @@ export class RSS extends LitElement {
   @state() private loading = false;
   @state() private error: string | undefined = undefined;
   @state() private displayCount = 7;
+  @state() private isIconHovered = false;
   private autoRefreshInterval: number | undefined;
   private lastKnownHeight: number = 6;
 
@@ -75,6 +78,11 @@ export class RSS extends LitElement {
       overflow-y: auto;
       overflow-x: hidden;
       position: relative;
+      display: block;
+    }
+
+    :host([folded]) .content {
+      display: none;
     }
 
     .loading {
@@ -174,6 +182,33 @@ export class RSS extends LitElement {
       background: var(--fv-bg-secondary);
       object-fit: contain;
       flex-shrink: 0;
+      cursor: pointer;
+      transition: var(--fv-transition);
+    }
+
+    .favicon:hover {
+      opacity: 0.7;
+    }
+
+    .caret-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      cursor: pointer;
+      color: var(--fv-text-secondary);
+      transition: var(--fv-transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .caret-icon:hover {
+      color: var(--fv-accent-primary);
+    }
+
+    .caret-icon svg {
+      width: 16px;
+      height: 16px;
     }
 
     .header-title {
@@ -224,6 +259,9 @@ export class RSS extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
     this.lastKnownHeight = this.widget.height || 6;
+    if (this.widget.folded) {
+      this.setAttribute('folded', '');
+    }
     await this.loadFeed();
     this.autoRefreshInterval = window.setInterval(() => {
       this.loadFeed();
@@ -337,6 +375,33 @@ export class RSS extends LitElement {
     }));
   }
 
+  private handleIconMouseEnter() {
+    this.isIconHovered = true;
+  }
+
+  private handleIconMouseLeave() {
+    this.isIconHovered = false;
+  }
+
+  private handleToggleFold(e: Event) {
+    e.stopPropagation();
+    const updatedWidget: RSSWidget = {
+      ...this.widget,
+      folded: !this.widget.folded
+    };
+
+    if (updatedWidget.folded) {
+      this.setAttribute('folded', '');
+    } else {
+      this.removeAttribute('folded');
+    }
+
+    this.dispatchEvent(new CustomEvent('widget-updated', {
+      detail: updatedWidget,
+      bubbles: true
+    }));
+  }
+
   render() {
     const displayItems = this.items.slice(0, this.displayCount);
     const hasMoreItems = this.displayCount < this.items.length;
@@ -344,15 +409,37 @@ export class RSS extends LitElement {
     return html`
       <div class="header">
         <span class="header-content">
-          <img
-            src="${this.favicon || rssIconUrl}"
-            alt="Favicon"
-            class="favicon"
-            @error=${(e: Event) => {
-              const img = e.currentTarget as HTMLImageElement;
-              img.src = rssIconUrl;
-            }}
-          />
+          ${this.isIconHovered
+            ? html`
+              <span 
+                class="caret-icon" 
+                role="button"
+                tabindex="0"
+                aria-label="${this.widget.folded ? 'Unfold widget' : 'Fold widget'}"
+                @click=${this.handleToggleFold}
+                @mouseenter=${this.handleIconMouseEnter}
+                @mouseleave=${this.handleIconMouseLeave}
+              >
+                ${this.widget.folded 
+                  ? unsafeSVG(navArrowRightIcon)
+                  : unsafeSVG(navArrowDownIcon)
+                }
+              </span>
+            `
+            : html`
+              <img
+                src="${this.favicon || rssIconUrl}"
+                alt="Favicon"
+                class="favicon"
+                @mouseenter=${this.handleIconMouseEnter}
+                @mouseleave=${this.handleIconMouseLeave}
+                @error=${(e: Event) => {
+                  const img = e.currentTarget as HTMLImageElement;
+                  img.src = rssIconUrl;
+                }}
+              />
+            `
+          }
           <h2 class="title header-title" title="${this.feedTitle}">${this.feedTitle}</h2>
         </span>
         <div class="header-actions">
