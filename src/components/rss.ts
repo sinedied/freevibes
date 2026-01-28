@@ -246,7 +246,6 @@ export class RSS extends LitElement {
 
     .configure-btn:hover {
       background-color: var(--fv-bg-primary);
-      border-color: var(--fv-accent-primary);
       color: var(--fv-accent-primary);
     }
 

@@ -111,29 +111,6 @@ export class Notes extends LitElement {
       flex: 1;
     }
 
-    .color-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid var(--fv-border);
-    }
-
-    .color-yellow {
-      background-color: var(--fv-note-yellow-border);
-    }
-
-    .color-green {
-      background-color: var(--fv-note-green-border);
-    }
-
-    .color-blue {
-      background-color: var(--fv-note-blue-border);
-    }
-
-    .color-red {
-      background-color: var(--fv-note-red-border);
-    }
-
     .header-actions {
       display: flex;
       gap: var(--fv-spacing-xs);
@@ -161,7 +138,6 @@ export class Notes extends LitElement {
 
     .configure-btn:hover {
       background-color: var(--fv-bg-primary);
-      border-color: var(--fv-accent-primary);
       color: var(--fv-accent-primary);
     }
 
