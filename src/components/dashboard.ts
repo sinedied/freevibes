@@ -150,6 +150,10 @@ export class Dashboard extends LitElement {
       opacity: 0.6;
     }
 
+    .widget.folded .resize-handle {
+      display: none;
+    }
+
     .resize-handle:hover {
       opacity: 1 !important;
       background: linear-gradient(-45deg, transparent 0%, transparent 30%, var(--fv-accent-primary) 30%, var(--fv-accent-primary) 40%, transparent 40%, transparent 60%, var(--fv-accent-primary) 60%, var(--fv-accent-primary) 70%, transparent 70%);
@@ -353,7 +357,7 @@ export class Dashboard extends LitElement {
     e.stopPropagation(); // Prevent widget drag from starting
     
     const widget = this.data.widgets.find(w => w.id === widgetId);
-    if (!widget) return;
+    if (!widget || widget.folded) return; // Don't allow resize on folded widgets
 
     this._resizingId = widgetId;
     this._resizeStartY = e.clientY;
