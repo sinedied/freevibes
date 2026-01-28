@@ -467,7 +467,7 @@ export class EditWidgetDialog extends LitElement {
     // For RSS widgets, title is optional (will use feed title if not provided)
     // For Note widgets, title is required
     if (this.selectedType === 'note' && !this.widgetTitle?.trim()) return false;
-    if (this.selectedType === 'rss' && !this.feedUrl?.trim()) return false;
+    if (this.selectedType === 'rss' && !this.feedUrl.trim()) return false;
     return true;
   }
 
