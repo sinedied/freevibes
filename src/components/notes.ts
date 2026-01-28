@@ -142,9 +142,9 @@ export class Notes extends LitElement {
 
     .configure-btn {
       background: none;
-      border: 1px solid var(--fv-border);
+      border: none;
       border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-xs);
+      padding: 2px;
       cursor: pointer;
       color: var(--fv-text-secondary);
       transition: var(--fv-transition);
@@ -427,7 +427,6 @@ export class Notes extends LitElement {
           <button class="configure-btn" @click=${this.handleConfigure} title="Configure widget">
             ${unsafeSVG(editIcon)}
           </button>
-          <div class="color-indicator color-${this.widget.color}"></div>
         </div>
       </div>
       <div class="content">

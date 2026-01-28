@@ -307,18 +307,40 @@ export class EditWidgetDialog extends LitElement {
       background-color: var(--fv-bg-primary);
     }
 
-    .confirm-dialog {
-      margin-top: var(--fv-spacing-md);
-      padding: var(--fv-spacing-md);
-      background-color: var(--fv-bg-tertiary);
-      border: 1px solid var(--fv-border);
-      border-radius: var(--fv-border-radius);
+    .confirm-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .confirm-modal {
+      background-color: var(--fv-bg-secondary);
+      border-radius: var(--fv-border-radius-lg);
+      box-shadow: 0 20px 60px var(--fv-shadow);
+      max-width: 400px;
+      width: 90%;
+      padding: var(--fv-spacing-lg);
+    }
+
+    .confirm-title {
+      font-size: var(--fv-font-size-lg);
+      font-weight: 600;
+      margin: 0 0 var(--fv-spacing-md) 0;
+      color: var(--fv-text-primary);
     }
 
     .confirm-message {
       font-size: var(--fv-font-size-sm);
       color: var(--fv-text-primary);
-      margin: 0 0 var(--fv-spacing-sm) 0;
+      margin: 0 0 var(--fv-spacing-lg) 0;
+      line-height: var(--fv-line-height);
     }
 
     .confirm-actions {
@@ -360,7 +382,7 @@ export class EditWidgetDialog extends LitElement {
   }
 
   updated(changedProperties: Map<string, unknown>) {
-    if (changedProperties.has('open') && this.open) {
+    if ((changedProperties.has('open') && this.open) || (changedProperties.has('widget') && this.open)) {
       this.initializeForm();
     }
   }
@@ -515,25 +537,13 @@ export class EditWidgetDialog extends LitElement {
           </div>
         ` : ''}
 
-        ${this.showDeleteConfirm ? html`
-          <div class="confirm-dialog">
-            <p class="confirm-message">Are you sure you want to delete this widget?</p>
-            <div class="confirm-actions">
-              <button class="btn btn-cancel" @click=${this.handleDeleteCancel}>Cancel</button>
-              <button class="btn btn-danger" @click=${this.handleDeleteConfirm}>
-                ${unsafeSVG(trashIcon)}
-                Delete
-              </button>
-            </div>
-          </div>
-        ` : ''}
       </div>
       <div class="footer">
         <div class="footer-left">
           ${!this.isEditMode() ? html`
             <button class="btn back-btn" @click=${this.handleBack}>Back</button>
           ` : ''}
-          ${this.isEditMode() && !this.showDeleteConfirm ? html`
+          ${this.isEditMode() ? html`
             <button class="btn btn-danger" @click=${this.handleDeleteClick}>
               ${unsafeSVG(trashIcon)}
               Delete
@@ -575,6 +585,25 @@ export class EditWidgetDialog extends LitElement {
           ` : ''}
         </div>
       </div>
+      ${this.showDeleteConfirm ? html`
+        <div class="confirm-overlay" @click=${(e: Event) => {
+          if ((e.target as HTMLElement).classList.contains('confirm-overlay')) {
+            this.handleDeleteCancel();
+          }
+        }}>
+          <div class="confirm-modal">
+            <h3 class="confirm-title">Delete Widget</h3>
+            <p class="confirm-message">Are you sure you want to delete this widget? This action cannot be undone.</p>
+            <div class="confirm-actions">
+              <button class="btn btn-cancel" @click=${this.handleDeleteCancel}>Cancel</button>
+              <button class="btn btn-danger" @click=${this.handleDeleteConfirm}>
+                ${unsafeSVG(trashIcon)}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ` : ''}
     `;
   }
 }

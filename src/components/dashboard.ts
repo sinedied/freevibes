@@ -37,7 +37,7 @@ export class Dashboard extends LitElement {
       box-shadow: 0 2px 8px var(--fv-shadow);
       transition: all 0.3s ease;
       overflow: hidden;
-      height: calc(var(--widget-height, 6) * 1.5em + 3rem);
+      height: calc(var(--widget-height, 6) * 2em + 4rem);
       min-height: var(--fv-widget-min-height);
       position: relative;
     }

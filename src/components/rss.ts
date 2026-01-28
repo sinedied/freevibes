@@ -227,9 +227,9 @@ export class RSS extends LitElement {
 
     .configure-btn {
       background: none;
-      border: 1px solid var(--fv-border);
+      border: none;
       border-radius: var(--fv-border-radius);
-      padding: var(--fv-spacing-xs);
+      padding: 2px;
       cursor: pointer;
       color: var(--fv-text-secondary);
       transition: var(--fv-transition);
