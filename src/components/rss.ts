@@ -73,7 +73,7 @@ export class RSS extends LitElement {
     }
 
     .content {
-      padding: var(--fv-spacing-sm);
+      padding: 0 var(--fv-spacing-sm);
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
