@@ -1,14 +1,18 @@
 import { LitElement, html, css } from 'lit';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { customElement, state } from 'lit/decorators.js';
-import { dataService, type DashboardData, type Widget, type RSSWidget, type NoteWidget } from './services/data.js';
+import { dataService, type DashboardData, type Widget, type RSSWidget, type NoteWidget, type Tab } from './services/data.js';
 import './components/dashboard.js';
 import './components/settings.js';
 import './components/edit-widget-dialog.js';
+import './components/tab-bar.js';
+import './components/edit-tab-dialog.js';
 import settingsIcon from 'iconoir/icons/settings.svg?raw';
 import menuIcon from 'iconoir/icons/more-vert.svg?raw';
 import plusIcon from 'iconoir/icons/plus.svg?raw';
 import logOutIcon from 'iconoir/icons/log-out.svg?raw';
+import newTabIcon from 'iconoir/icons/new-tab.svg?raw';
+import editIcon from 'iconoir/icons/edit.svg?raw';
 
 const WIDGET_ORDER_SPACING = 1000;
 
@@ -18,7 +22,9 @@ export class App extends LitElement {
   @state() private loading = true;
   @state() private showSettings = false;
   @state() private showEditWidget = false;
+  @state() private showEditTab = false;
   @state() private editingWidget: Widget | undefined = undefined;
+  @state() private editingTab: Tab | undefined = undefined;
   @state() private githubLoggedIn = false;
   @state() private loginError: string | undefined = undefined;
   @state() private loginToken: string = '';
@@ -42,6 +48,7 @@ export class App extends LitElement {
       position: sticky;
       top: 0;
       z-index: 100;
+      gap: var(--fv-spacing-lg);
     }
 
     .logo {
@@ -49,6 +56,13 @@ export class App extends LitElement {
       font-weight: 600;
       color: var(--fv-accent-primary);
       text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .header-tabs {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .nav {
@@ -124,6 +138,33 @@ export class App extends LitElement {
 
     .menu-item.logout-item:hover {
       color: var(--fv-danger);
+    }
+
+    .menu-item-icon {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-item-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .menu-submenu {
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background: var(--fv-bg-secondary);
+      border: 1px solid var(--fv-border);
+      border-radius: var(--fv-border-radius);
+      box-shadow: 0 4px 12px var(--fv-shadow);
+      min-width: 200px;
+      z-index: 1001;
+      overflow: hidden;
+      margin-left: var(--fv-spacing-xs);
     }
 
     .main {
@@ -401,7 +442,10 @@ export class App extends LitElement {
     const config = event.detail;
     if (!this.data) return;
 
-    const columnWidgets = this.data.widgets.filter(w => w.position.column === 1);
+    const currentTabId = this.data.settings.currentTabId || this.data.tabs[0]?.id;
+    if (!currentTabId) return;
+
+    const columnWidgets = this.data.widgets.filter(w => w.tabId === currentTabId && w.position.column === 1);
     const minOrder = columnWidgets.length > 0 
       ? Math.min(...columnWidgets.map(w => w.position.order))
       : WIDGET_ORDER_SPACING;
@@ -410,6 +454,7 @@ export class App extends LitElement {
       id: crypto.randomUUID(),
       type: config.type,
       title: config.title,
+      tabId: currentTabId,
       position: {
         column: 1,
         order: minOrder - WIDGET_ORDER_SPACING
@@ -482,6 +527,145 @@ export class App extends LitElement {
     this.editingWidget = undefined;
   }
 
+  private getCurrentTabId(): string {
+    if (!this.data) return '';
+    return this.data.settings.currentTabId || this.data.tabs[0]?.id || '';
+  }
+
+  private async handleTabSelected(event: CustomEvent) {
+    const tabId = event.detail;
+    if (!this.data) return;
+
+    const updatedData = {
+      ...this.data,
+      settings: {
+        ...this.data.settings,
+        currentTabId: tabId
+      }
+    };
+
+    this.data = updatedData;
+    await dataService.saveData(updatedData);
+  }
+
+  private async handleTabsReordered(event: CustomEvent) {
+    const reorderedTabs = event.detail;
+    if (!this.data) return;
+
+    const updatedData = {
+      ...this.data,
+      tabs: reorderedTabs
+    };
+
+    this.data = updatedData;
+    await dataService.saveData(updatedData);
+  }
+
+  private openAddTab() {
+    this.editingTab = undefined;
+    this.showEditTab = true;
+    this.showMenu = false;
+  }
+
+  private openEditCurrentTab() {
+    if (!this.data) return;
+    const currentTabId = this.getCurrentTabId();
+    const tab = this.data.tabs.find(t => t.id === currentTabId);
+    if (tab) {
+      this.editingTab = tab;
+      this.showEditTab = true;
+      this.showMenu = false;
+    }
+  }
+
+  private closeEditTab() {
+    this.showEditTab = false;
+    this.editingTab = undefined;
+  }
+
+  private async handleAddTab(event: CustomEvent) {
+    const config = event.detail;
+    if (!this.data) return;
+
+    const maxOrder = this.data.tabs.length > 0
+      ? Math.max(...this.data.tabs.map(t => t.order))
+      : 0;
+
+    const newTab: Tab = {
+      id: crypto.randomUUID(),
+      name: config.name,
+      order: maxOrder + 1000
+    };
+
+    const updatedData = {
+      ...this.data,
+      tabs: [...this.data.tabs, newTab],
+      settings: {
+        ...this.data.settings,
+        currentTabId: newTab.id
+      }
+    };
+
+    this.data = updatedData;
+    await dataService.saveData(updatedData);
+    this.showEditTab = false;
+  }
+
+  private async handleEditTabSave(event: CustomEvent) {
+    const config = event.detail;
+    if (!this.data || !config.id) return;
+
+    const updatedTabs = this.data.tabs.map(t =>
+      t.id === config.id
+        ? { ...t, name: config.name }
+        : t
+    );
+
+    const updatedData = {
+      ...this.data,
+      tabs: updatedTabs
+    };
+
+    this.data = updatedData;
+    await dataService.saveData(updatedData);
+    this.showEditTab = false;
+    this.editingTab = undefined;
+  }
+
+  private async handleDeleteTab(event: CustomEvent) {
+    const { id } = event.detail;
+    if (!this.data || !id) return;
+
+    if (this.data.tabs.length <= 1) {
+      return;
+    }
+
+    const deletedTabIndex = this.data.tabs.findIndex(t => t.id === id);
+    const updatedTabs = this.data.tabs.filter(t => t.id !== id);
+    const updatedWidgets = this.data.widgets.filter(w => w.tabId !== id);
+
+    let newCurrentTabId = this.data.settings.currentTabId;
+    if (newCurrentTabId === id) {
+      const newIndex = Math.min(deletedTabIndex, updatedTabs.length - 1);
+      newCurrentTabId = updatedTabs[newIndex]?.id || updatedTabs[0]?.id;
+    }
+
+    const updatedData = {
+      ...this.data,
+      tabs: updatedTabs,
+      widgets: updatedWidgets,
+      settings: {
+        ...this.data.settings,
+        currentTabId: newCurrentTabId
+      }
+    };
+
+    this.data = updatedData;
+    await dataService.saveData(updatedData);
+    this.showEditTab = false;
+    this.editingTab = undefined;
+  }
+
   render() {
     if (this.loading) {
       return html`
@@ -529,6 +713,16 @@ export class App extends LitElement {
     return html`
       <div class="header">
         <a href="/" class="logo">FreeVibes</a>
+        ${this.data.tabs.length > 0 ? html`
+          <div class="header-tabs">
+            <fv-tab-bar
+              .tabs=${this.data.tabs}
+              .currentTabId=${this.getCurrentTabId()}
+              @tab-selected=${this.handleTabSelected}
+              @tabs-reordered=${this.handleTabsReordered}>
+            </fv-tab-bar>
+          </div>
+        ` : ''}
         <nav class="nav">
           <button class="menu-btn" @click=${this.toggleMenu} title="Menu">
             ${unsafeSVG(menuIcon)}
@@ -538,6 +732,14 @@ export class App extends LitElement {
               <button class="menu-item" @click=${this.openAddWidget}>
                 ${unsafeSVG(plusIcon)}
                 <span>Add widget</span>
+              </button>
+              <button class="menu-item" @click=${this.openAddTab}>
+                ${unsafeSVG(newTabIcon)}
+                <span>Add tab</span>
+              </button>
+              <button class="menu-item" @click=${this.openEditCurrentTab}>
+                ${unsafeSVG(editIcon)}
+                <span>Edit current tab</span>
               </button>
               <button class="menu-item" @click=${this.openSettings}>
                 ${unsafeSVG(settingsIcon)}
@@ -555,7 +757,8 @@ export class App extends LitElement {
       </div>
       <main class="main">
         <fv-dashboard 
-          .data=${this.data} 
+          .data=${this.data}
+          .currentTabId=${this.getCurrentTabId()}
           @data-updated=${this.handleDataUpdate}
           @configure-widget=${this.handleConfigureWidget}>
         </fv-dashboard>
@@ -577,6 +780,17 @@ export class App extends LitElement {
           @delete-widget=${this.handleDeleteWidget}
           @close=${this.closeEditWidget}>
         </fv-edit-widget-dialog>
+      ` : ''}
+      ${this.showEditTab ? html`
+        <fv-edit-tab-dialog
+          ?open=${this.showEditTab}
+          .tab=${this.editingTab}
+          .canDelete=${this.data.tabs.length > 1}
+          @add-tab=${this.handleAddTab}
+          @edit-tab=${this.handleEditTabSave}
+          @delete-tab=${this.handleDeleteTab}
+          @close=${this.closeEditTab}>
+        </fv-edit-tab-dialog>
       ` : ''}
     `;
   }

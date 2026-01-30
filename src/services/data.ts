@@ -1,3 +1,9 @@
+export interface Tab {
+  id: string;
+  name: string;
+  order: number;
+}
+
 export interface DashboardData {
   settings: {
     columns: number;
@@ -6,7 +12,9 @@ export interface DashboardData {
     mainColor: string;
     backgroundColor: string;
     fontSize: number;
+    currentTabId?: string;
   };
+  tabs: Tab[];
   widgets: Widget[];
 }
 
@@ -14,12 +22,13 @@ export interface Widget {
   id: string;
   type: 'rss' | 'note';
   title: string;
+  tabId: string;
   position: {
     column: number;
     order: number;
   };
-  height?: number; // Height in lines (em units)
-  folded?: boolean; // Whether the widget is folded (showing only title bar)
+  height?: number;
+  folded?: boolean;
 }
 
 export interface RSSWidget extends Widget {
@@ -47,23 +56,24 @@ class DataService {
   private localStorageKey = 'freevibes-data';
   private isUsingGistStorage = false;
 
-  private migrateWidgetData(widgets: any[]): Widget[] {
+  private migrateWidgetData(widgets: any[], tabs: Tab[]): Widget[] {
+    const defaultTabId = tabs.length > 0 ? tabs[0].id : crypto.randomUUID();
     return widgets.map((widget, index) => {
-      // If widget has old position format (row, col), migrate to new format
       if (widget.position && 'row' in widget.position && 'col' in widget.position) {
         const { row, col } = widget.position;
         return {
           ...widget,
+          tabId: widget.tabId || defaultTabId,
           position: {
             column: col,
-            order: row * 1000 + index // Convert row-based order to column order
+            order: row * 1000 + index
           },
-          height: widget.height || 6 // Default height of 6 lines
+          height: widget.height || 6
         };
       }
-      // Ensure height is set for new widgets
       return {
         ...widget,
+        tabId: widget.tabId || defaultTabId,
         height: widget.height || 6
       };
     });
@@ -76,8 +86,28 @@ class DataService {
       darkModeType: settings.darkModeType || (settings.darkMode ? 'on' : 'off'),
       mainColor: settings.mainColor || '#007bff',
       backgroundColor: settings.backgroundColor || '#f8f9fa', 
-      fontSize: settings.fontSize || 16
+      fontSize: settings.fontSize || 16,
+      currentTabId: settings.currentTabId
     };
+  }
+
+  private migrateTabs(tabs: any[] | undefined, settings: any): Tab[] {
+    if (tabs && tabs.length > 0) {
+      return tabs.map(t => ({
+        id: t.id,
+        name: t.name,
+        order: t.order
+      }));
+    }
+    const defaultTab: Tab = {
+      id: crypto.randomUUID(),
+      name: 'Main',
+      order: 1000
+    };
+    if (!settings.currentTabId) {
+      settings.currentTabId = defaultTab.id;
+    }
+    return [defaultTab];
   }
 
   async loginWithGithubToken(githubToken: string) {
@@ -101,10 +131,13 @@ class DataService {
       try {
         rawData = await githubGistService.loadData();
         if (rawData) {
+          const settings = this.migrateSettingsData(rawData.settings);
+          const tabs = this.migrateTabs(rawData.tabs, settings);
           const migratedData = {
             ...rawData,
-            settings: this.migrateSettingsData(rawData.settings),
-            widgets: this.migrateWidgetData(rawData.widgets)
+            settings,
+            tabs,
+            widgets: this.migrateWidgetData(rawData.widgets, tabs)
           };
           this.dashboardData = migratedData;
           this.saveToLocalStorage(migratedData);
@@ -120,10 +153,13 @@ class DataService {
       try {
         rawData = JSON.parse(localStorageData);
         if (rawData) {
+          const settings = this.migrateSettingsData(rawData.settings);
+          const tabs = this.migrateTabs(rawData.tabs, settings);
           const migratedData = {
             ...rawData,
-            settings: this.migrateSettingsData(rawData.settings),
-            widgets: this.migrateWidgetData(rawData.widgets)
+            settings,
+            tabs,
+            widgets: this.migrateWidgetData(rawData.widgets, tabs)
           };
           this.dashboardData = migratedData;
           return migratedData;
@@ -137,10 +173,13 @@ class DataService {
       const response = await fetch('./data.json');
       rawData = await response.json();
       if (rawData) {
+        const settings = this.migrateSettingsData(rawData.settings);
+        const tabs = this.migrateTabs(rawData.tabs, settings);
         const migratedData = {
           ...rawData,
-          settings: this.migrateSettingsData(rawData.settings),
-          widgets: this.migrateWidgetData(rawData.widgets)
+          settings,
+          tabs,
+          widgets: this.migrateWidgetData(rawData.widgets, tabs)
         };
         this.dashboardData = migratedData;
         return migratedData;
@@ -149,7 +188,7 @@ class DataService {
       console.error('Failed to load data:', error);
     }
     
-    // Fallback default data
+    const defaultTabId = crypto.randomUUID();
     const defaultData = {
       settings: { 
         columns: 3, 
@@ -157,8 +196,14 @@ class DataService {
         darkModeType: 'off' as const,
         mainColor: '#007bff',
         backgroundColor: '#f8f9fa',
-        fontSize: 16
+        fontSize: 16,
+        currentTabId: defaultTabId
       },
+      tabs: [{
+        id: defaultTabId,
+        name: 'Main',
+        order: 1000
+      }],
       widgets: []
     };
     this.dashboardData = defaultData;

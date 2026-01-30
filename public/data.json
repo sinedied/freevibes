@@ -1,14 +1,23 @@
 {
   "settings": {
     "columns": 3,
-    "darkMode": false
+    "darkMode": false,
+    "currentTabId": "default-tab-1"
   },
+  "tabs": [
+    {
+      "id": "default-tab-1",
+      "name": "Main",
+      "order": 1000
+    }
+  ],
   "widgets": [
     {
       "id": "rss-1",
       "type": "rss",
       "title": "Hacker News",
       "feedUrl": "https://hnrss.org/frontpage",
+      "tabId": "default-tab-1",
       "position": { "column": 1, "order": 1000 },
       "height": 8
     },
@@ -17,6 +26,7 @@
       "type": "rss",
       "title": "GitHub Blog",
       "feedUrl": "https://github.blog/feed/",
+      "tabId": "default-tab-1",
       "position": { "column": 2, "order": 1000 },
       "height": 8
     },
@@ -26,6 +36,7 @@
       "title": "Welcome to FreeVibes!",
       "content": "Welcome to FreeVibes - your personal dashboard!\n\n✨ Features:\n• RSS feed reader widgets\n• Inline sticky notes\n• Dark mode toggle\n• Responsive grid layout\n\n🔗 Click to edit this note!\nAdd links like https://github.com and they'll be clickable.",
       "color": "yellow",
+      "tabId": "default-tab-1",
       "position": { "column": 3, "order": 1000 },
       "height": 10
     },
@@ -34,6 +45,7 @@
       "type": "rss",
       "title": "CSS-Tricks",
       "feedUrl": "https://css-tricks.com/feed/",
+      "tabId": "default-tab-1",
       "position": { "column": 1, "order": 2000 },
       "height": 6
     },
@@ -43,6 +55,7 @@
       "title": "Quick Notes",
       "content": "• Remember to check email\n• Update project documentation\n• Review pull requests\n• Plan weekend activities\n\nUseful links:\nhttps://github.com/trending\nhttps://news.ycombinator.com",
       "color": "green",
+      "tabId": "default-tab-1",
       "position": { "column": 2, "order": 2000 },
       "height": 8
     },
@@ -52,6 +65,7 @@
       "title": "Ideas & Inspiration",
       "content": "💡 Project Ideas:\n• Build a personal blog\n• Create a portfolio website\n• Learn a new programming language\n• Contribute to open source\n\n🎯 Goals for this month:\n• Complete current project\n• Write technical articles\n• Network with other developers",
       "color": "blue",
+      "tabId": "default-tab-1",
       "position": { "column": 3, "order": 2000 },
       "height": 10
     }

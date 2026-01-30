@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { type DashboardData, type Widget } from '../services/data.js';
 import './rss.js';
 import './notes.js';
@@ -7,6 +8,7 @@ import './notes.js';
 @customElement('fv-dashboard')
 export class Dashboard extends LitElement {
   @property({ type: Object }) data!: DashboardData;
+  @property({ type: String }) currentTabId = '';
 
   static styles = css`
     :host {
@@ -460,7 +462,9 @@ export class Dashboard extends LitElement {
   }
 
   render() {
-    if (!this.data.widgets.length) {
+    const tabWidgets = this.data.widgets.filter(w => w.tabId === this.currentTabId);
+
+    if (!tabWidgets.length) {
       return html`
         <div class="dashboard">
           <div class="empty-state">
@@ -473,8 +477,7 @@ export class Dashboard extends LitElement {
     const columns = this.data.settings.columns;
     const columnArrays: Widget[][] = Array.from({ length: columns }, () => []);
 
-    // Organize widgets by column
-    this.data.widgets.forEach(widget => {
+    tabWidgets.forEach(widget => {
       const columnIndex = Math.max(0, Math.min(widget.position.column - 1, columns - 1));
       columnArrays[columnIndex].push(widget);
     });
@@ -493,17 +496,20 @@ export class Dashboard extends LitElement {
             @dragover=${(e: DragEvent) => this.handleDragOver(e, columnIndex)}
             @drop=${this.handleDrop}
           >
-            ${columnWidgets.map((widget, widgetIndex) => {
-              // Show placeholder if this is where the dragged widget would be inserted
-              const showPlaceholderBefore = this._dragPreview?.column === columnIndex && 
-                                         this._dragPreview?.position === widgetIndex &&
-                                         this._draggedWidget?.id !== widget.id;
-              
-              return html`
-                ${showPlaceholderBefore ? this.renderDragPlaceholder(this._draggedWidget!) : ''}
-                ${this.renderWidget(widget)}
-              `;
-            })}
+            ${repeat(
+              columnWidgets,
+              (widget) => widget.id,
+              (widget, widgetIndex) => {
+                const showPlaceholderBefore = this._dragPreview?.column === columnIndex && 
+                                           this._dragPreview?.position === widgetIndex &&
+                                           this._draggedWidget?.id !== widget.id;
+                
+                return html`
+                  ${showPlaceholderBefore ? this.renderDragPlaceholder(this._draggedWidget!) : ''}
+                  ${this.renderWidget(widget)}
+                `;
+              }
+            )}
             ${/* Show placeholder at end of column if needed */ ''}
             ${this._dragPreview?.column === columnIndex && 
               this._dragPreview?.position === columnWidgets.length &&
