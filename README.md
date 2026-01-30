@@ -101,7 +101,36 @@ We welcome contributions! Here's how to get started:
 4. **Push** to the branch: `git push origin feature/amazing-feature`
 5. **Open** a Pull Request
 
-## 📄 License
+## CORS Proxy
+
+RSS feeds are fetched through a CORS proxy to bypass browser restrictions. By default, the app uses [corsproxy.io](https://corsproxy.io), which works for localhost development.
+
+For production deployments, you can use the included Cloudflare Worker proxy:
+
+### Setting up your own proxy
+
+1. Navigate to the proxy folder and install dependencies:
+   ```bash
+   cd proxy
+   npm install
+   ```
+
+2. Login to Cloudflare and deploy:
+   ```bash
+   npx wrangler login
+   npm run deploy
+   ```
+
+3. Set the `VITE_PROXY_URL` environment variable during build:
+   ```bash
+   VITE_PROXY_URL=https://your-worker.your-subdomain.workers.dev npm run build
+   ```
+
+For GitHub Actions deployment, add `VITE_PROXY_URL` as an environment variable in your build step.
+
+See the [proxy README](proxy/README.md) for more details on configuration and allowed origins.
+
+## License
 
 This project is open source and available under the [MIT License](LICENSE).
 

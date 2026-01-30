@@ -64,9 +64,16 @@ function parseAtom(xml: Document): RSSFeedResult {
   };
 }
 
+function getProxyUrl(targetUrl: string): string {
+  const customProxy = import.meta.env.VITE_PROXY_URL;
+  if (customProxy) {
+    return `${customProxy}?url=${encodeURIComponent(targetUrl)}`;
+  }
+  return `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+}
+
 export async function fetchAndParseFeed(url: string): Promise<RSSFeedResult> {
-  const corsProxy = 'https://corsproxy.io/?';
-  const response = await fetch(`${corsProxy}${encodeURIComponent(url)}`);
+  const response = await fetch(getProxyUrl(url));
   if (!response.ok) throw new Error(`Failed to fetch RSS feed: ${response.status}`);
   const text = await response.text();
   const parser = new DOMParser();

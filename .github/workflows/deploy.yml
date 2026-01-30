@@ -18,6 +18,10 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  # Replace with your own proxy URL
+  VITE_PROXY_URL: https://freevibes-cors-proxy.noda-3a3.workers.dev
+
 jobs:
   # Build job
   build:
