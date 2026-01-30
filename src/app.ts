@@ -486,9 +486,25 @@ export class App extends LitElement {
     const updatedWidgets = this.data.widgets.map(w => {
       if (w.id !== config.id) return w;
 
+      const nextTabId = config.tabId || w.tabId;
+      let nextPosition = w.position;
+      if (nextTabId !== w.tabId) {
+        const column = w.position.column;
+        const columnWidgets = this.data!.widgets.filter(widget => widget.tabId === nextTabId && widget.position.column === column);
+        const minOrder = columnWidgets.length > 0
+          ? Math.min(...columnWidgets.map(widget => widget.position.order))
+          : WIDGET_ORDER_SPACING;
+        nextPosition = {
+          column,
+          order: minOrder - WIDGET_ORDER_SPACING
+        };
+      }
+
       const updatedWidget: Widget = {
         ...w,
-        title: config.title
+        title: config.title,
+        tabId: nextTabId,
+        position: nextPosition
       };
 
       if (config.type === 'rss') {
@@ -775,6 +791,8 @@ export class App extends LitElement {
         <fv-edit-widget-dialog
           ?open=${this.showEditWidget}
           .widget=${this.editingWidget}
+          .tabs=${this.data?.tabs || []}
+          .currentTabId=${this.getCurrentTabId()}
           @add-widget=${this.handleAddWidget}
           @edit-widget=${this.handleEditWidget}
           @delete-widget=${this.handleDeleteWidget}

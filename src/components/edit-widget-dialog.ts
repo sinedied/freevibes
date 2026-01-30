@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
-import { type Widget, type RSSWidget, type NoteWidget } from '../services/data.js';
+import { type Widget, type RSSWidget, type NoteWidget, type Tab } from '../services/data.js';
 import antennaIcon from 'iconoir/icons/antenna.svg?raw';
 import pageEditIcon from 'iconoir/icons/page-edit.svg?raw';
 import trashIcon from 'iconoir/icons/trash.svg?raw';
@@ -13,6 +13,7 @@ interface WidgetConfig {
   id?: string;
   type: WidgetType;
   title: string;
+  tabId?: string;
   feedUrl?: string;
   content?: string;
   color?: NoteColor;
@@ -22,12 +23,15 @@ interface WidgetConfig {
 export class EditWidgetDialog extends LitElement {
   @property({ type: Boolean }) open = false;
   @property({ type: Object }) widget: Widget | undefined = undefined;
+  @property({ type: Array }) tabs: Tab[] = [];
+  @property({ type: String }) currentTabId = '';
   @state() private step: 'select' | 'configure' = 'select';
   @state() private selectedType: WidgetType = undefined;
   @state() private widgetTitle = '';
   @state() private feedUrl = '';
   @state() private content = '';
   @state() private color: NoteColor = 'yellow';
+  @state() private selectedTabId: string | undefined = undefined;
   @state() private showDeleteConfirm = false;
 
   static styles = css`
@@ -156,6 +160,12 @@ export class EditWidgetDialog extends LitElement {
 
     .form-group {
       margin-bottom: var(--fv-spacing-md);
+    }
+
+    .tab-section {
+      margin-top: var(--fv-spacing-lg);
+      padding-top: var(--fv-spacing-md);
+      border-top: 1px solid var(--fv-border);
     }
 
     .form-label {
@@ -361,6 +371,7 @@ export class EditWidgetDialog extends LitElement {
     this.feedUrl = '';
     this.content = '';
     this.color = 'yellow';
+    this.selectedTabId = this.currentTabId || this.tabs[0]?.id;
     this.showDeleteConfirm = false;
   }
 
@@ -369,6 +380,7 @@ export class EditWidgetDialog extends LitElement {
       this.step = 'configure';
       this.selectedType = this.widget.type;
       this.widgetTitle = this.widget.title || '';
+      this.selectedTabId = this.widget.tabId || this.currentTabId || this.tabs[0]?.id;
       
       if (this.widget.type === 'rss') {
         this.feedUrl = (this.widget as RSSWidget).feedUrl;
@@ -426,6 +438,9 @@ export class EditWidgetDialog extends LitElement {
 
     if (this.isEditMode() && this.widget) {
       config.id = this.widget.id;
+    }
+    if (this.isEditMode()) {
+      config.tabId = this.selectedTabId;
     }
 
     if (this.selectedType === 'rss') {
@@ -544,6 +559,20 @@ export class EditWidgetDialog extends LitElement {
                 ></div>
               `)}
             </div>
+          </div>
+        ` : ''}
+
+        ${this.isEditMode() && this.tabs.length > 1 ? html`
+          <div class="form-group tab-section">
+            <label class="form-label">Tab</label>
+            <select
+              class="form-input"
+              @change=${(e: Event) => this.selectedTabId = (e.target as HTMLSelectElement).value}
+            >
+              ${this.tabs.map(tab => html`
+                <option value=${tab.id} ?selected=${tab.id === this.selectedTabId}>${tab.name}</option>
+              `)}
+            </select>
           </div>
         ` : ''}
 
