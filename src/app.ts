@@ -10,6 +10,7 @@ import './components/edit-tab-dialog.js';
 import settingsIcon from 'iconoir/icons/settings.svg?raw';
 import menuIcon from 'iconoir/icons/more-vert.svg?raw';
 import plusIcon from 'iconoir/icons/plus.svg?raw';
+import faviconUrl from '/favicon.svg?url';
 import logOutIcon from 'iconoir/icons/log-out.svg?raw';
 import newTabIcon from 'iconoir/icons/new-tab.svg?raw';
 import editIcon from 'iconoir/icons/edit.svg?raw';
@@ -52,17 +53,25 @@ export class App extends LitElement {
     }
 
     .logo {
-      font-size: var(--fv-font-size-xl);
+      display: flex;
+      align-items: center;
+      gap: var(--fv-spacing-sm);
+      font-size: var(--fv-font-size-lg);
       font-weight: 600;
-      color: var(--fv-accent-primary);
-      text-decoration: none;
+      color: var(--fv-text-primary);
       white-space: nowrap;
+    }
+
+    .logo img {
+      width: 24px;
+      height: 24px;
     }
 
     .header-tabs {
       flex: 1;
       min-width: 0;
       overflow: hidden;
+      height: 100%;
     }
 
     .nav {
@@ -76,7 +85,7 @@ export class App extends LitElement {
       background: none;
       border: none;
       cursor: pointer;
-      padding: var(--fv-spacing-sm);
+      padding: var(--fv-spacing-xs);
       color: var(--fv-text-primary);
       transition: var(--fv-transition);
       border-radius: var(--fv-border-radius);
@@ -90,8 +99,9 @@ export class App extends LitElement {
     }
 
     .menu-btn svg {
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
     }
 
     .menu-dropdown {
@@ -717,7 +727,7 @@ export class App extends LitElement {
     if (!this.data) {
       return html`
         <div class="header">
-          <a href="/" class="logo">FreeVibes</a>
+          <span class="logo"><img src=${faviconUrl} alt="">FreeVibes</span>
         </div>
         <div class="error">
           <div>Failed to load dashboard data</div>
@@ -728,7 +738,7 @@ export class App extends LitElement {
 
     return html`
       <div class="header">
-        <a href="/" class="logo">FreeVibes</a>
+        <span class="logo"><img src=${faviconUrl} alt="">FreeVibes</span>
         ${this.data.tabs.length > 0 ? html`
           <div class="header-tabs">
             <fv-tab-bar

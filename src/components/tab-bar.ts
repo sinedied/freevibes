@@ -13,6 +13,7 @@ export class TabBar extends LitElement {
   static styles = css`
     :host {
       display: block;
+      height: 100%;
     }
 
     .tab-bar {
@@ -20,7 +21,8 @@ export class TabBar extends LitElement {
       gap: var(--fv-spacing-xs);
       overflow-x: auto;
       scrollbar-width: thin;
-      align-items: center;
+      align-items: stretch;
+      height: 100%;
     }
 
     .tab-bar::-webkit-scrollbar {
@@ -34,7 +36,8 @@ export class TabBar extends LitElement {
 
     .tab-wrapper {
       display: flex;
-      align-items: center;
+      align-items: stretch;
+      height: 100%;
     }
 
     .drop-indicator {
@@ -47,10 +50,9 @@ export class TabBar extends LitElement {
 
     .tab {
       position: relative;
-      padding: var(--fv-spacing-xs) var(--fv-spacing-md);
+      padding: 0 var(--fv-spacing-md);
       background: transparent;
       border: none;
-      border-bottom: 2px solid transparent;
       cursor: pointer;
       transition: var(--fv-transition);
       white-space: nowrap;
@@ -58,18 +60,37 @@ export class TabBar extends LitElement {
       align-items: center;
       gap: var(--fv-spacing-xs);
       user-select: none;
+      height: 100%;
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: transparent;
+      transition: var(--fv-transition);
     }
 
     .tab.dragging {
       opacity: 0.4;
     }
 
+    .tab:hover:not(.active) {
+      background-color: var(--fv-bg-tertiary);
+    }
+
     .tab:hover {
       color: var(--fv-accent-primary);
     }
 
+    .tab.active::after {
+      background: var(--fv-accent-primary);
+    }
+
     .tab.active {
-      border-bottom-color: var(--fv-accent-primary);
       font-weight: 600;
     }
 

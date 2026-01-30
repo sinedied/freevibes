@@ -6,7 +6,7 @@ import { dataService } from '../services/data.js';
 import noteIconSvg from '/note.svg?raw';
 import checkIcon from 'iconoir/icons/check.svg?raw';
 import xmarkIcon from 'iconoir/icons/xmark.svg?raw';
-import editIcon from 'iconoir/icons/edit.svg?raw';
+import settingsIcon from 'iconoir/icons/settings.svg?raw';
 import navArrowDownIcon from 'iconoir/icons/nav-arrow-down.svg?raw';
 import navArrowRightIcon from 'iconoir/icons/nav-arrow-right.svg?raw';
 
@@ -131,8 +131,8 @@ export class Notes extends LitElement {
       justify-content: center;
     }
 
-    :host(:hover) .configure-btn,
-    :host(:focus-within) .configure-btn {
+    .header:hover .configure-btn,
+    .header:focus-within .configure-btn {
       opacity: 1;
     }
 
@@ -401,7 +401,7 @@ export class Notes extends LitElement {
         </span>
         <div class="header-actions">
           <button class="configure-btn" @click=${this.handleConfigure} title="Configure widget">
-            ${unsafeSVG(editIcon)}
+            ${unsafeSVG(settingsIcon)}
           </button>
         </div>
       </div>

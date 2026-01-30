@@ -4,7 +4,7 @@ import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { type RSSWidget, type RSSItem } from '../services/data.js';
 import { rssService } from '../services/rss.js';
 import rssIconUrl from '/rss.svg?url';
-import editIcon from 'iconoir/icons/edit.svg?raw';
+import settingsIcon from 'iconoir/icons/settings.svg?raw';
 import navArrowDownIcon from 'iconoir/icons/nav-arrow-down.svg?raw';
 import navArrowRightIcon from 'iconoir/icons/nav-arrow-right.svg?raw';
 
@@ -239,8 +239,8 @@ export class RSS extends LitElement {
       justify-content: center;
     }
 
-    :host(:hover) .configure-btn,
-    :host(:focus-within) .configure-btn {
+    .header:hover .configure-btn,
+    .header:focus-within .configure-btn {
       opacity: 1;
     }
 
@@ -443,7 +443,7 @@ export class RSS extends LitElement {
         </span>
         <div class="header-actions">
           <button class="configure-btn" @click=${this.handleConfigure} title="Configure widget">
-            ${unsafeSVG(editIcon)}
+            ${unsafeSVG(settingsIcon)}
           </button>
         </div>
       </div>

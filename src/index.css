@@ -57,7 +57,7 @@
   --fv-transition-fast: all 0.15s ease;
   
   /* Layout */
-  --fv-header-height: 60px;
+  --fv-header-height: 44px;
   --fv-widget-min-height: 150px;
   --fv-widget-gap: var(--fv-spacing-md);
 }
