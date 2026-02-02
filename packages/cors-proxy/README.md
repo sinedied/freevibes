@@ -1,4 +1,4 @@
-# FreeVibes CORS Proxy
+# CORS Proxy
 
 A simple Cloudflare Worker that proxies RSS feed requests to bypass CORS restrictions.
 

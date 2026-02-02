@@ -32,11 +32,12 @@ Description: A web dashboard for RSS/Notes inspired by the old NetVibes.
   * allows users to customize the dashboard
 
 ## Code structure
-- `src/`: Source code directory
-  * `components/`: Contains all Lit components
-  * `services/`: Shared services logic, such as fetching data and managing localStorage
-  * `app.ts`: Main application entry point
-- `public/`: Public assets directory, also contains the `data.json` file with initial data for the dashboard
+- `packages/web/`: Web application source code
+  * `src/components/`: Contains all Lit components
+  * `src/services/`: Shared services logic, such as fetching data and managing localStorage
+  * `src/app.ts`: Main application entry point
+  * `public/`: Static assets (favicon, icons, data.json)
+- `packages/cors-proxy/`: CORS proxy for RSS feeds (Cloudflare Worker)
 
 ## Design choices
 - Flat design with a focus on simplicity and usability

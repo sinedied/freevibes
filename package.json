@@ -3,18 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "iconoir": "^7.11.0",
-    "lit": "^3.2.1"
+    "dev": "concurrently -n web,proxy -c blue,green \"npm run dev -w @freevibes/web\" \"npm run dev -w @freevibes/cors-proxy\"",
+    "build": "npm run build -w @freevibes/web",
+    "preview": "npm run preview -w @freevibes/web",
+    "deploy:proxy": "npm run deploy -w @freevibes/cors-proxy"
   },
   "devDependencies": {
-    "@types/node": "^22.5.0",
-    "typescript": "^5.8.3",
-    "vite": "^6.2.0"
+    "concurrently": "^9.1.2"
   }
 }

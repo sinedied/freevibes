@@ -1,7 +1,7 @@
 <!-- prettier-ignore -->
 <div align="center">
 
-<img src="./public/favicon.svg" alt="" align="center" height="64" />
+<img src="./packages/web/public/favicon.svg" alt="" align="center" height="64" />
 
 # FreeVibes
 
@@ -105,20 +105,19 @@ We welcome contributions! Here's how to get started:
 
 RSS feeds are fetched through a CORS proxy to bypass browser restrictions. By default, the app uses [corsproxy.io](https://corsproxy.io), which works for localhost development.
 
-For production deployments, you can use the included Cloudflare Worker proxy:
+For production deployments, you can use the included Cloudflare Worker proxy located in `packages/cors-proxy`:
 
 ### Setting up your own proxy
 
 1. Navigate to the proxy folder and install dependencies:
    ```bash
-   cd proxy
-   npm install
+   npm install  # From root directory, installs all workspaces
    ```
 
 2. Login to Cloudflare and deploy:
    ```bash
    npx wrangler login
-   npm run deploy
+   npm run deploy:proxy
    ```
 
 3. Set the `VITE_PROXY_URL` environment variable during build:
@@ -128,7 +127,7 @@ For production deployments, you can use the included Cloudflare Worker proxy:
 
 For GitHub Actions deployment, add `VITE_PROXY_URL` as an environment variable in your build step.
 
-See the [proxy README](proxy/README.md) for more details on configuration and allowed origins.
+See the proxy folder (`packages/cors-proxy`) for more details on configuration and allowed origins.
 
 ## License
 

@@ -1,5 +1,5 @@
 {
-  "name": "freevibes-cors-proxy",
+  "name": "@freevibes/cors-proxy",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -7,6 +7,7 @@
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
+    "typescript": "^5.8.3",
     "wrangler": "^4.61.1"
   }
 }
