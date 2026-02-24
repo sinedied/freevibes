@@ -5,6 +5,7 @@
 
 # FreeVibes
 
+[![Build](https://img.shields.io/github/actions/workflow/status/sinedied/freevibes/build.yml?style=flat-square&logo=github&label=Build)](https://github.com/sinedied/freevibes/actions/workflows/build.yml)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen?style=flat-square&logo=github)](https://sinedied.github.io/freevibes/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Lit](https://img.shields.io/badge/Lit-324FFF?style=flat-square&logo=lit&logoColor=white)](https://lit.dev/)
