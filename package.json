@@ -10,9 +10,39 @@
     "dev": "concurrently -n web,proxy -c blue,green \"npm run dev -w @freevibes/web\" \"npm run dev -w @freevibes/cors-proxy\"",
     "build": "npm run build -w @freevibes/web",
     "preview": "npm run preview -w @freevibes/web",
-    "deploy:proxy": "npm run deploy -w @freevibes/cors-proxy"
+    "deploy:proxy": "npm run deploy -w @freevibes/cors-proxy",
+    "lint": "xo",
+    "lint:fix": "xo --fix"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "xo": "1.2.3"
+  },
+  "xo": {
+    "prettier": true,
+    "semicolon": true,
+    "rules": {
+      "unicorn/prevent-abbreviations": "off",
+      "@typescript-eslint/member-ordering": "off",
+      "@typescript-eslint/naming-convention": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/triple-slash-reference": "off",
+      "@typescript-eslint/prefer-nullish-coalescing": "off",
+      "import-x/no-unassigned-import": "off",
+      "import-x/no-anonymous-default-export": "off",
+      "import-x/no-absolute-path": "off",
+      "no-return-assign": "off"
+    }
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": true,
+    "printWidth": 120,
+    "bracketSpacing": true
   }
 }

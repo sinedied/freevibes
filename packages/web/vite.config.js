@@ -1,15 +1,16 @@
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-export default {
-  base: '/freevibes/',
-  build: {
-    outDir: resolve(__dirname, '../../dist'),
-    emptyOutDir: true,
-    sourcemap: true
-  }
+const config = {
+	base: '/freevibes/',
+	build: {
+		outDir: path.resolve(__dirname, '../../dist'),
+		emptyOutDir: true,
+		sourcemap: true,
+	},
 };
+
+export default config;
