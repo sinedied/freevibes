@@ -315,7 +315,7 @@ export class RSS extends LitElement {
 			// Update display count after loading items
 			this.updateDisplayCount();
 		} catch (error) {
-			this.error = 'Failed to load RSS feed';
+			this.error = error instanceof Error ? error.message : 'Failed to load feed';
 			this.feedTitle = this.widget.title;
 			this.favicon = undefined;
 			console.error('RSS feed error:', error);
