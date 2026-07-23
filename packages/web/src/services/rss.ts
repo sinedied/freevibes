@@ -22,7 +22,12 @@ class RSSService {
 			return feedResult;
 		} catch (error) {
 			console.error('Failed to fetch RSS feed:', error);
-			return this.getFallbackResult(feedUrl);
+			const staleCache = this.feedCache.get(feedUrl);
+			if (staleCache) {
+				return staleCache.feedResult;
+			}
+
+			throw error instanceof Error ? error : new Error('Failed to load feed');
 		}
 	}
 
@@ -44,15 +49,6 @@ class RSSService {
 			feedResult,
 			cacheTimestamp: Date.now(),
 		});
-	}
-
-	private getFallbackResult(feedUrl: string): RSSFeedResult {
-		const cachedFeedData = this.feedCache.get(feedUrl);
-		if (cachedFeedData) {
-			return cachedFeedData.feedResult;
-		}
-
-		return { items: [], feed: { title: '', favicon: undefined } };
 	}
 
 	clearCache(): void {

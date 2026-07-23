@@ -75,14 +75,29 @@ function getProxyUrl(targetUrl: string): string {
 	return `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 }
 
+function isBlockedChallengeResponse(body: string): boolean {
+	const snippet = body.slice(0, 4000).toLowerCase();
+	return (
+		snippet.includes('just a moment') ||
+		snippet.includes('cf-browser-verification') ||
+		snippet.includes('challenge-platform')
+	);
+}
+
 export async function fetchAndParseFeed(url: string): Promise<RSSFeedResult> {
 	const response = await fetch(getProxyUrl(url));
-	if (!response.ok) throw new Error(`Failed to fetch RSS feed: ${response.status}`);
 	const text = await response.text();
+
+	if (isBlockedChallengeResponse(text)) {
+		throw new Error('Feed unavailable (blocked by the source)');
+	}
+
+	if (!response.ok) throw new Error(`Failed to load feed (HTTP ${response.status})`);
+
 	const parser = new DOMParser();
 	const xml = parser.parseFromString(text, 'application/xml');
-	if (xml.querySelector('parsererror')) throw new Error('Invalid RSS/Atom XML');
+	if (xml.querySelector('parsererror')) throw new Error('Feed unavailable (invalid response)');
 	if (xml.querySelector('channel')) return parseRSS(xml);
 	if (xml.querySelector('feed')) return parseAtom(xml);
-	throw new Error('Unknown feed format');
+	throw new Error('Feed unavailable (invalid response)');
 }
